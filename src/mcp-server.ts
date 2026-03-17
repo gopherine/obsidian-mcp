@@ -22,13 +22,16 @@ import { todoCommand } from "./commands/todo.js";
 import { brainstormCommand } from "./commands/brainstorm.js";
 import { sessionCommand } from "./commands/session.js";
 import { graphRelatedCommand, graphCrossProjectCommand } from "./commands/graph.js";
+import { initCommand } from "./commands/init.js";
+import { taskCommand } from "./commands/task.js";
+import { learnCommand } from "./commands/learn.js";
 
 const config = loadConfig();
 const vaultFs = new VaultFS(config.vaultPath);
 const sessionRegistry = new SessionRegistryManager(config.vaultPath, config.sessionTtlHours);
 
 const server = new Server(
-  { name: "obsidian-kb", version: "0.1.0" },
+  { name: "obsidian-kb", version: "0.2.0" },
   { capabilities: { tools: {}, resources: {}, prompts: {} } }
 );
 
@@ -88,6 +91,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "vault_init",
+      description: "Scan a git repo and generate a draft context.md. Returns the draft — does NOT write to vault. Human reviews before committing.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          project_path: { type: "string", description: "Absolute path to the git repository to scan" },
+          slug: { type: "string", description: "Project slug (default: derived from directory name)" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
       name: "vault_decide",
       description: "Log an architectural/design decision to the project's decisions directory.",
       inputSchema: {
@@ -104,8 +119,46 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: "vault_task",
+      description: "Manage project tasks. Supports add, list, update, and board (kanban) views. Tasks are stored as individual files in projects/<slug>/tasks/.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          action: { type: "string", enum: ["add", "list", "update", "board"], description: "Task action" },
+          title: { type: "string", description: "Task title (required for add)" },
+          task_id: { type: "string", description: "Task ID e.g. task-001 (required for update)" },
+          status: { type: "string", enum: ["backlog", "in-progress", "blocked", "done", "cancelled"], description: "Task status" },
+          priority: { type: "string", enum: ["p0", "p1", "p2"], description: "Task priority (default p1)" },
+          blocked_by: { type: "array", items: { type: "string" }, description: "Task IDs that block this task" },
+          assigned_to: { type: "string", description: "Assignee: claude-code|opencode|codex|human" },
+          tags: { type: "array", items: { type: "string" }, description: "Tags" },
+          project: { type: "string", description: "Project slug (auto-detected if omitted)" },
+        },
+        required: ["action"],
+      },
+    },
+    {
+      name: "vault_learn",
+      description: "Capture and query learnings. Learnings persist discoveries across sessions. Stored as individual files in projects/<slug>/learnings/.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          action: { type: "string", enum: ["add", "list"], description: "Learning action" },
+          title: { type: "string", description: "Learning title (required for add)" },
+          discovery: { type: "string", description: "What was discovered (required for add)" },
+          project: { type: "string", description: "Project slug (auto-detected if omitted)" },
+          tags: { type: "array", items: { type: "string" }, description: "Tags" },
+          confidence: { type: "string", enum: ["high", "medium", "low"], description: "Confidence level (default medium)" },
+          source: { type: "string", description: "Source tool" },
+          session_id: { type: "string", description: "Session ID that captured this learning" },
+          tag: { type: "string", description: "Filter learnings by tag (for list)" },
+        },
+        required: ["action"],
+      },
+    },
+    {
       name: "vault_todo",
-      description: "Read or modify the project todo list.",
+      description: "[Deprecated — use vault_task] Read or modify the project todo list.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -132,7 +185,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "vault_session",
-      description: "Register, update, or query active agent sessions for multi-agent coordination.",
+      description: "Register, update, or query active agent sessions for multi-agent coordination. On complete, persists a session note to the vault.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -142,6 +195,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           task_summary: { type: "string", description: "What this session is doing" },
           files_touched: { type: "array", items: { type: "string" }, description: "Files this session modifies" },
           session_id: { type: "string", description: "Session ID (for heartbeat/complete)" },
+          outcome: { type: "string", description: "Session outcome (for complete)" },
+          tasks_completed: { type: "array", items: { type: "string" }, description: "Task IDs completed (for complete)" },
         },
         required: ["action"],
       },
@@ -195,6 +250,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
+      case "vault_init": {
+        const { project_path, slug } = args as { project_path: string; slug?: string };
+        const result = await initCommand(project_path, slug);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
       case "vault_decide": {
         const { title, context: ctx, decision, alternatives, consequences, project } = args as any;
         const result = await decideCommand(vaultFs, config.vaultPath, {
@@ -206,6 +267,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           project,
         });
         return { content: [{ type: "text", text: JSON.stringify(result) }] };
+      }
+
+      case "vault_task": {
+        const { action, title, task_id, status, priority, blocked_by, assigned_to, tags, project } = args as any;
+        const result = await taskCommand(vaultFs, config.vaultPath, {
+          action,
+          title,
+          taskId: task_id,
+          status,
+          priority,
+          blockedBy: blocked_by,
+          assignedTo: assigned_to,
+          tags,
+          project,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "vault_learn": {
+        const { action, title, discovery, project, tags, confidence, source, session_id, tag } = args as any;
+        const result = await learnCommand(vaultFs, config.vaultPath, {
+          action,
+          title,
+          discovery,
+          project,
+          tags,
+          confidence,
+          source,
+          sessionId: session_id,
+          tag,
+        });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "vault_todo": {
@@ -230,7 +323,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "vault_session": {
-        const { action, tool, project, task_summary, files_touched, session_id } = args as any;
+        const { action, tool, project, task_summary, files_touched, session_id, outcome, tasks_completed } = args as any;
         const result = await sessionCommand(sessionRegistry, {
           action,
           tool,
@@ -238,7 +331,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           taskSummary: task_summary,
           filesTouched: files_touched,
           sessionId: session_id,
-        });
+          outcome,
+          tasksCompleted: tasks_completed,
+        }, vaultFs);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
@@ -341,13 +436,24 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       // No todos file, skip
     }
 
+    let learningSection = "";
+    if (result.learning_count > 0) {
+      learningSection = `\n\n## Learnings: ${result.learning_count} available (use vault_learn list)`;
+    }
+
+    let sessionSection = "";
+    if (result.last_session) {
+      const ago = getTimeAgo(result.last_session.completed_at);
+      sessionSection = `\n\n## Last Session (${ago}): ${result.last_session.outcome}`;
+    }
+
     return {
       messages: [
         {
           role: "user",
           content: {
             type: "text",
-            text: `## Project Context: ${result.project_slug}\n\n${result.context_md}${todoSection}`,
+            text: `## Project Context: ${result.project_slug}\n\n${result.context_md}${todoSection}${learningSection}${sessionSection}`,
           },
         },
       ],
@@ -388,6 +494,17 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
 
   throw new Error(`Unknown prompt: ${name}`);
 });
+
+function getTimeAgo(isoDate: string): string {
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  if (hours < 1) return "just now";
+  if (hours === 1) return "1h ago";
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "1d ago";
+  return `${days}d ago`;
+}
 
 // ── Start ─────────────────────────────────────────────
 

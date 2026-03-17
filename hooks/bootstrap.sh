@@ -51,3 +51,25 @@ if [[ -n "$SESSIONS" ]]; then
   echo "## Active Sessions (other agents working)"
   echo "$SESSIONS"
 fi
+
+# 6. Learning count
+LEARN_COUNT=$($CLI learn list 2>/dev/null | python3 -c "import sys,json; print(len(json.loads(sys.stdin.read()).get('learnings',[])))" 2>/dev/null || echo "0")
+if [[ "$LEARN_COUNT" != "0" ]]; then
+  echo ""
+  echo "## Learnings: $LEARN_COUNT available (use vault_learn list)"
+fi
+
+# 7. Last session info
+LAST_SESSION=$($CLI context --detail full 2>/dev/null | python3 -c "
+import sys,json
+try:
+  data = json.loads(sys.stdin.read())
+  ls = data.get('last_session')
+  if ls and ls.get('outcome'):
+    print(ls['outcome'])
+except:
+  pass
+" 2>/dev/null || echo "")
+if [[ -n "$LAST_SESSION" ]]; then
+  echo "## Last Session: $LAST_SESSION"
+fi

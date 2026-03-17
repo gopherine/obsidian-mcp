@@ -13,6 +13,9 @@ import { todoCommand } from "./commands/todo.js";
 import { brainstormCommand } from "./commands/brainstorm.js";
 import { sessionCommand } from "./commands/session.js";
 import { graphRelatedCommand, graphCrossProjectCommand } from "./commands/graph.js";
+import { initCommand } from "./commands/init.js";
+import { taskCommand, type TaskStatus, type TaskPriority } from "./commands/task.js";
+import { learnCommand, type Confidence } from "./commands/learn.js";
 
 const config = loadConfig();
 const vaultFs = new VaultFS(config.vaultPath);
@@ -23,7 +26,7 @@ const program = new Command();
 program
   .name("obsidian-kb")
   .description("Universal agentic knowledge base — CLI backed by Obsidian vault")
-  .version("0.1.0");
+  .version("0.2.0");
 
 // ── read ──────────────────────────────────────────────
 program
@@ -133,6 +136,21 @@ program
     }
   });
 
+// ── init ──────────────────────────────────────────────
+program
+  .command("init <project-path>")
+  .description("Scan a git repo and generate draft context.md")
+  .option("-s, --slug <name>", "Project slug (default: directory name)")
+  .action(async (projectPath: string, opts: { slug?: string }) => {
+    try {
+      const result = await initCommand(projectPath, opts.slug);
+      process.stdout.write(result.draft_context_md);
+    } catch (e: any) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+  });
+
 // ── decide ────────────────────────────────────────────
 program
   .command("decide")
@@ -160,10 +178,10 @@ program
     }
   });
 
-// ── todo ──────────────────────────────────────────────
+// ── todo (deprecated — use task) ─────────────────────
 const todoCmd = program
   .command("todo")
-  .description("Manage project todos");
+  .description("[Deprecated — use 'task' instead] Manage project todos");
 
 todoCmd
   .command("list")
@@ -220,6 +238,187 @@ todoCmd
         project: opts.project,
       });
       console.log(`Completed: ${text}`);
+    } catch (e: any) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+  });
+
+// ── task ──────────────────────────────────────────────
+const taskCmd = program
+  .command("task")
+  .description("Manage project tasks (kanban board)");
+
+taskCmd
+  .command("list")
+  .description("List tasks")
+  .option("-p, --project <slug>", "Project slug")
+  .option("-s, --status <status>", "Filter by status")
+  .option("--priority <level>", "Filter by priority")
+  .option("--assigned-to <tool>", "Filter by assignee")
+  .action(async (opts: { project?: string; status?: string; priority?: string; assignedTo?: string }) => {
+    try {
+      const result = await taskCommand(vaultFs, config.vaultPath, {
+        action: "list",
+        project: opts.project,
+        status: opts.status as TaskStatus | undefined,
+        priority: opts.priority as TaskPriority | undefined,
+        assignedTo: opts.assignedTo,
+      });
+      if (!result.tasks?.length) {
+        console.log("No tasks found.");
+        return;
+      }
+      for (const t of result.tasks) {
+        const blocked = t.blocked_by.length > 0 ? " [BLOCKED]" : "";
+        console.log(`[${t.id}] [${t.priority}] [${t.status}]${blocked} ${t.title}`);
+      }
+    } catch (e: any) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+  });
+
+taskCmd
+  .command("add <title>")
+  .description("Add a task")
+  .option("-p, --project <slug>", "Project slug")
+  .option("--priority <level>", "Priority: p0|p1|p2", "p1")
+  .option("--blocked-by <ids...>", "Task IDs that block this task")
+  .option("--assigned-to <tool>", "Assignee: claude-code|opencode|codex|human")
+  .option("--tags <tags>", "Comma-separated tags")
+  .action(async (title: string, opts: { project?: string; priority: string; blockedBy?: string[]; assignedTo?: string; tags?: string }) => {
+    try {
+      const tags = opts.tags ? opts.tags.split(",").map((t) => t.trim()) : undefined;
+      const result = await taskCommand(vaultFs, config.vaultPath, {
+        action: "add",
+        title,
+        project: opts.project,
+        priority: opts.priority as TaskPriority,
+        blockedBy: opts.blockedBy,
+        assignedTo: opts.assignedTo,
+        tags,
+      });
+      console.log(JSON.stringify({ task_id: result.task_id, path: result.path }));
+    } catch (e: any) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+  });
+
+taskCmd
+  .command("update <task-id>")
+  .description("Update a task")
+  .option("-p, --project <slug>", "Project slug")
+  .option("-s, --status <status>", "New status")
+  .option("--priority <level>", "New priority")
+  .option("--blocked-by <ids...>", "New blocked-by list")
+  .option("--assigned-to <tool>", "New assignee")
+  .option("-t, --title <text>", "New title")
+  .action(async (taskId: string, opts: { project?: string; status?: string; priority?: string; blockedBy?: string[]; assignedTo?: string; title?: string }) => {
+    try {
+      const result = await taskCommand(vaultFs, config.vaultPath, {
+        action: "update",
+        taskId,
+        project: opts.project,
+        status: opts.status as TaskStatus | undefined,
+        priority: opts.priority as TaskPriority | undefined,
+        blockedBy: opts.blockedBy,
+        assignedTo: opts.assignedTo,
+        title: opts.title,
+      });
+      console.log(JSON.stringify({ task_id: result.task_id, updated_fields: result.updated_fields }));
+    } catch (e: any) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+  });
+
+taskCmd
+  .command("board")
+  .description("Show task board (kanban view)")
+  .option("-p, --project <slug>", "Project slug")
+  .action(async (opts: { project?: string }) => {
+    try {
+      const result = await taskCommand(vaultFs, config.vaultPath, {
+        action: "board",
+        project: opts.project,
+      });
+      if (!result.board) return;
+
+      for (const [status, tasks] of Object.entries(result.board)) {
+        if (tasks.length === 0) continue;
+        console.log(`\n=== ${status.toUpperCase()} (${tasks.length}) ===`);
+        for (const t of tasks) {
+          const blocked = t.blocked_by.length > 0 ? " [BLOCKED]" : "";
+          const assignee = t.assigned_to ? ` @${t.assigned_to}` : "";
+          console.log(`  [${t.id}] [${t.priority}]${blocked}${assignee} ${t.title}`);
+        }
+      }
+    } catch (e: any) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+  });
+
+// ── learn ─────────────────────────────────────────────
+const learnCmd = program
+  .command("learn")
+  .description("Capture and query learnings");
+
+learnCmd
+  .command("add")
+  .description("Capture a learning")
+  .requiredOption("-t, --title <text>", "Learning title")
+  .requiredOption("-d, --discovery <text>", "What was discovered")
+  .option("-p, --project <slug>", "Project slug")
+  .option("--tags <tags>", "Comma-separated tags")
+  .option("--confidence <level>", "Confidence: high|medium|low", "medium")
+  .option("--source <tool>", "Source tool")
+  .action(async (opts: { title: string; discovery: string; project?: string; tags?: string; confidence: string; source?: string }) => {
+    try {
+      const tags = opts.tags ? opts.tags.split(",").map((t) => t.trim()) : undefined;
+      const result = await learnCommand(vaultFs, config.vaultPath, {
+        action: "add",
+        title: opts.title,
+        discovery: opts.discovery,
+        project: opts.project,
+        tags,
+        confidence: opts.confidence as Confidence,
+        source: opts.source,
+      });
+      console.log(JSON.stringify({ learning_id: result.learning_id, path: result.path }));
+    } catch (e: any) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+  });
+
+learnCmd
+  .command("list")
+  .description("List learnings")
+  .option("-p, --project <slug>", "Project slug")
+  .option("--tag <tag>", "Filter by tag")
+  .action(async (opts: { project?: string; tag?: string }) => {
+    try {
+      const result = await learnCommand(vaultFs, config.vaultPath, {
+        action: "list",
+        project: opts.project,
+        tag: opts.tag,
+      });
+      if (!result.learnings?.length) {
+        console.log(JSON.stringify({ learnings: [] }));
+        return;
+      }
+      // Table format for CLI, JSON for piping
+      if (process.stdout.isTTY) {
+        for (const l of result.learnings) {
+          const tagStr = l.tags.length > 0 ? ` (${l.tags.join(", ")})` : "";
+          console.log(`[${l.id}] [${l.confidence}] ${l.title}${tagStr} — ${l.created}`);
+        }
+      } else {
+        console.log(JSON.stringify({ learnings: result.learnings }));
+      }
     } catch (e: any) {
       console.error(`Error: ${e.message}`);
       process.exit(1);
@@ -291,14 +490,25 @@ sessionCmd
   .command("complete <session-id>")
   .description("Mark session as completed")
   .option("--summary <text>", "Session summary")
-  .action(async (sessionId: string, opts: { summary?: string }) => {
+  .option("--outcome <text>", "Session outcome")
+  .option("--files <paths...>", "Files touched during session")
+  .option("--tasks <ids...>", "Task IDs completed")
+  .option("-p, --project <slug>", "Project slug")
+  .action(async (sessionId: string, opts: { summary?: string; outcome?: string; files?: string[]; tasks?: string[]; project?: string }) => {
     try {
-      await sessionCommand(sessionRegistry, {
+      const result = await sessionCommand(sessionRegistry, {
         action: "complete",
         sessionId,
         taskSummary: opts.summary,
-      });
+        outcome: opts.outcome,
+        filesTouched: opts.files,
+        tasksCompleted: opts.tasks,
+        project: opts.project,
+      }, vaultFs);
       console.log("Session completed");
+      if (result.session_note_path) {
+        console.log(`Session note: ${result.session_note_path}`);
+      }
     } catch (e: any) {
       console.error(`Error: ${e.message}`);
       process.exit(1);

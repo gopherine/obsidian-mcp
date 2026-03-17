@@ -14,9 +14,13 @@ export interface Frontmatter {
 const VALID_TYPES = [
   "context", "adr", "brainstorm", "decision", "todo",
   "incident", "pattern", "evaluation", "index",
+  "task", "learning", "session",
 ];
 
-const VALID_STATUSES = ["active", "resolved", "deprecated", "draft"];
+const VALID_STATUSES = [
+  "active", "resolved", "deprecated", "draft",
+  "backlog", "in-progress", "blocked", "done", "cancelled", "completed",
+];
 
 /**
  * Parse markdown content with YAML frontmatter.
