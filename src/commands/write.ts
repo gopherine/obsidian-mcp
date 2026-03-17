@@ -22,6 +22,17 @@ export async function writeCommand(
   await vaultFs.verifyNoSymlinkEscape(path);
 
   if (mode === "append") {
+    // If file doesn't exist, create it (same as overwrite) instead of throwing
+    const fileExists = await vaultFs.exists(path);
+    if (!fileExists) {
+      const fm = fmOverrides ? createFrontmatter(fmOverrides) : createFrontmatter({});
+      const errors = validateFrontmatter(fm);
+      if (errors.length > 0) {
+        throw new Error(`Invalid frontmatter: ${errors.join("; ")}`);
+      }
+      const result = await vaultFs.write(path, serializeFrontmatter(fm, content));
+      return { written: true, ...result };
+    }
     // Atomic read-modify-write: read existing, append content, write back
     const existing = await vaultFs.read(path);
     const { data, content: body } = parseFrontmatter(existing);
@@ -36,6 +47,10 @@ export async function writeCommand(
     if (!fileExists) {
       // Create new file with content
       const fm = fmOverrides ? createFrontmatter(fmOverrides) : createFrontmatter({});
+      const errors = validateFrontmatter(fm);
+      if (errors.length > 0) {
+        throw new Error(`Invalid frontmatter: ${errors.join("; ")}`);
+      }
       const result = await vaultFs.write(path, serializeFrontmatter(fm, content));
       return { written: true, ...result };
     }

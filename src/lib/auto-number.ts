@@ -25,8 +25,9 @@ export async function getNextNumber(vaultFs: VaultFS, dirPath: string): Promise<
  * Generate a filename slug from a title.
  */
 export function slugify(title: string): string {
-  return title
+  const result = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+  return result || "untitled";
 }

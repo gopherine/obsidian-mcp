@@ -176,7 +176,8 @@ export class SessionRegistryManager {
           typeof s.status === "string" &&
           typeof s.started_at === "string" &&
           typeof s.last_heartbeat === "string" &&
-          !isNaN(new Date(s.last_heartbeat).getTime())
+          !isNaN(new Date(s.last_heartbeat).getTime()) &&
+          Array.isArray(s.files_touched)
       );
 
       return { sessions: validSessions };

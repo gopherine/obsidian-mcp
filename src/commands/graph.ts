@@ -1,4 +1,4 @@
-import { VaultFS } from "../lib/vault-fs.js";
+import { VaultFS, VaultError } from "../lib/vault-fs.js";
 import { searchText, type SearchResult } from "../lib/search-engine.js";
 import { escapeRegex } from "../lib/escape-regex.js";
 
@@ -47,8 +47,11 @@ export async function graphRelatedCommand(
         backlinks.push(result.path);
       }
     }
-  } catch {
-    // Search failed, return what we have
+  } catch (e: unknown) {
+    // Only swallow search-related errors; let unexpected ones propagate
+    if (e instanceof VaultError && e.code === "FILE_NOT_FOUND") { /* expected */ }
+    else if (e instanceof Error && e.message.includes("search")) { /* search engine error */ }
+    else throw e;
   }
 
   // For hops > 1, recursively gather links from linked notes
@@ -66,8 +69,9 @@ export async function graphRelatedCommand(
             secondHopOutgoing.add(subLink);
           }
         }
-      } catch {
-        // Note doesn't exist, skip
+      } catch (e: unknown) {
+        if (e instanceof VaultError && e.code === "FILE_NOT_FOUND") { /* expected */ }
+        else throw e;
       }
 
       // Backlinks to linked notes
@@ -79,8 +83,10 @@ export async function graphRelatedCommand(
             secondHopBacklinks.add(r.path);
           }
         }
-      } catch {
-        // Search failed, skip
+      } catch (e: unknown) {
+        if (e instanceof VaultError && e.code === "FILE_NOT_FOUND") { /* expected */ }
+        else if (e instanceof Error && e.message.includes("search")) { /* search engine error */ }
+        else throw e;
       }
     }
 

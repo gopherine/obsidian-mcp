@@ -43,7 +43,13 @@ async function loadProjectMap(vaultPath: string): Promise<ProjectMap> {
     }
     cache = { map, time: now, vaultPath };
     return map;
-  } catch {
+  } catch (e: any) {
+    // ENOENT is expected (no project-map.json); rethrow permission errors
+    if (e?.code === "EACCES") {
+      console.error(`Warning: permission denied reading ${mapPath}`);
+    } else if (e?.code !== "ENOENT" && !(e instanceof SyntaxError)) {
+      throw e;
+    }
     return {};
   }
 }

@@ -1,6 +1,5 @@
 import { readFile, writeFile, appendFile, mkdir, readdir, stat, realpath } from "fs/promises";
 import { join, resolve, relative, dirname } from "path";
-import { existsSync } from "fs";
 
 /**
  * Safe filesystem operations on the vault.
@@ -70,10 +69,14 @@ export class VaultFS {
   async append(relativePath: string, content: string): Promise<{ path: string; bytes: number }> {
     const abs = this.resolve(relativePath);
     await this.verifyNoSymlinkEscape(relativePath);
-    if (!existsSync(abs)) {
-      throw new VaultError("FILE_NOT_FOUND", `Cannot append to non-existent file: ${relativePath}`);
+    try {
+      await appendFile(abs, content, "utf-8");
+    } catch (e: any) {
+      if (e.code === "ENOENT") {
+        throw new VaultError("FILE_NOT_FOUND", `Cannot append to non-existent file: ${relativePath}`);
+      }
+      throw e;
     }
-    await appendFile(abs, content, "utf-8");
     return { path: relativePath, bytes: Buffer.byteLength(content, "utf-8") };
   }
 

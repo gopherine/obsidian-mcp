@@ -17,9 +17,22 @@ import { initCommand } from "./commands/init.js";
 import { taskCommand, type TaskStatus, type TaskPriority } from "./commands/task.js";
 import { learnCommand, type Confidence } from "./commands/learn.js";
 
-const config = loadConfig();
-const vaultFs = new VaultFS(config.vaultPath);
-const sessionRegistry = new SessionRegistryManager(config.vaultPath, config.sessionTtlHours);
+let _config: ReturnType<typeof loadConfig> | null = null;
+let _vaultFs: VaultFS | null = null;
+let _sessionRegistry: SessionRegistryManager | null = null;
+
+function getConfig() {
+  if (!_config) _config = loadConfig();
+  return _config;
+}
+function getVaultFs() {
+  if (!_vaultFs) _vaultFs = new VaultFS(getConfig().vaultPath);
+  return _vaultFs;
+}
+function getSessionRegistry() {
+  if (!_sessionRegistry) _sessionRegistry = new SessionRegistryManager(getConfig().vaultPath, getConfig().sessionTtlHours);
+  return _sessionRegistry;
+}
 
 const program = new Command();
 
@@ -34,7 +47,7 @@ program
   .description("Read a vault note")
   .action(async (path: string) => {
     try {
-      const content = await readCommand(vaultFs, path);
+      const content = await readCommand(getVaultFs(), path);
       process.stdout.write(content);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -54,7 +67,7 @@ program
       if (Number.isNaN(depth) || depth < 1) {
         throw new Error("--depth must be a positive integer");
       }
-      const entries = await listCommand(vaultFs, path, depth);
+      const entries = await listCommand(getVaultFs(), path, depth);
       for (const entry of entries) {
         console.log(entry);
       }
@@ -78,8 +91,15 @@ program
       if (!validModes.includes(opts.mode as any)) {
         throw new Error(`--mode must be one of: ${validModes.join(", ")}`);
       }
-      const fm = opts.frontmatter ? JSON.parse(opts.frontmatter) : undefined;
-      const result = await writeCommand(vaultFs, path, opts.content, {
+      let fm: Record<string, unknown> | undefined;
+      if (opts.frontmatter) {
+        try {
+          fm = JSON.parse(opts.frontmatter);
+        } catch {
+          throw new Error(`Invalid JSON in --frontmatter: ${opts.frontmatter}`);
+        }
+      }
+      const result = await writeCommand(getVaultFs(), path, opts.content, {
         mode: opts.mode as "overwrite" | "append" | "prepend",
         frontmatter: fm,
       });
@@ -98,7 +118,7 @@ program
   .requiredOption("-c, --content <text>", "Content to append")
   .action(async (path: string, opts: { content: string }) => {
     try {
-      const result = await writeCommand(vaultFs, path, opts.content, { mode: "append" });
+      const result = await writeCommand(getVaultFs(), path, opts.content, { mode: "append" });
       console.log(JSON.stringify(result));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -120,7 +140,7 @@ program
       if (Number.isNaN(limit) || limit < 1) {
         throw new Error("--limit must be a positive integer");
       }
-      const results = await searchCommand(config.vaultPath, query, {
+      const results = await searchCommand(getConfig().vaultPath, query, {
         project: opts.project,
         limit,
         structured: opts.structured,
@@ -141,10 +161,14 @@ program
   .option("-d, --detail <level>", "Detail level: summary|full", "summary")
   .action(async (opts: { project?: string; detail: string }) => {
     try {
-      const result = await contextCommand(vaultFs, config.vaultPath, {
+      const validDetails = ["summary", "full"] as const;
+      if (!validDetails.includes(opts.detail as any)) {
+        throw new Error(`--detail must be one of: ${validDetails.join(", ")}`);
+      }
+      const result = await contextCommand(getVaultFs(), getConfig().vaultPath, {
         project: opts.project,
         detailLevel: opts.detail as "summary" | "full",
-        maxTokens: config.maxInjectTokens,
+        maxTokens: getConfig().maxInjectTokens,
       });
       console.log(result.context_md);
     } catch (e: unknown) {
@@ -163,8 +187,9 @@ program
     try {
       const result = await initCommand(projectPath, opts.slug);
       process.stdout.write(result.draft_context_md);
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -181,7 +206,7 @@ program
   .option("-p, --project <slug>", "Project slug")
   .action(async (opts) => {
     try {
-      const result = await decideCommand(vaultFs, config.vaultPath, {
+      const result = await decideCommand(getVaultFs(), getConfig().vaultPath, {
         title: opts.title,
         context: opts.context,
         decision: opts.decision,
@@ -209,7 +234,7 @@ todoCmd
   .option("-b, --blockers-only", "Only show high-priority blockers")
   .action(async (opts: { project?: string; blockersOnly?: boolean }) => {
     try {
-      const result = await todoCommand(vaultFs, config.vaultPath, {
+      const result = await todoCommand(getVaultFs(), getConfig().vaultPath, {
         action: "list",
         project: opts.project,
         blockersOnly: opts.blockersOnly,
@@ -233,7 +258,7 @@ todoCmd
   .option("--priority <level>", "Priority: high|medium|low", "medium")
   .action(async (text: string, opts: { project?: string; priority: string }) => {
     try {
-      await todoCommand(vaultFs, config.vaultPath, {
+      await todoCommand(getVaultFs(), getConfig().vaultPath, {
         action: "add",
         item: text,
         priority: opts.priority as "high" | "medium" | "low",
@@ -253,7 +278,7 @@ todoCmd
   .option("-p, --project <slug>", "Project slug")
   .action(async (text: string, opts: { project?: string }) => {
     try {
-      await todoCommand(vaultFs, config.vaultPath, {
+      await todoCommand(getVaultFs(), getConfig().vaultPath, {
         action: "complete",
         item: text,
         project: opts.project,
@@ -280,7 +305,11 @@ taskCmd
   .option("--assigned-to <tool>", "Filter by assignee")
   .action(async (opts: { project?: string; status?: string; priority?: string; assignedTo?: string }) => {
     try {
-      const result = await taskCommand(vaultFs, config.vaultPath, {
+      const validPriorities = ["p0", "p1", "p2"] as const;
+      if (opts.priority && !validPriorities.includes(opts.priority as any)) {
+        throw new Error(`--priority must be one of: ${validPriorities.join(", ")}`);
+      }
+      const result = await taskCommand(getVaultFs(), getConfig().vaultPath, {
         action: "list",
         project: opts.project,
         status: opts.status as TaskStatus | undefined,
@@ -295,8 +324,9 @@ taskCmd
         const blocked = t.blocked_by.length > 0 ? " [BLOCKED]" : "";
         console.log(`[${t.id}] [${t.priority}] [${t.status}]${blocked} ${t.title}`);
       }
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -311,8 +341,12 @@ taskCmd
   .option("--tags <tags>", "Comma-separated tags")
   .action(async (title: string, opts: { project?: string; priority: string; blockedBy?: string[]; assignedTo?: string; tags?: string }) => {
     try {
+      const validPriorities = ["p0", "p1", "p2"] as const;
+      if (!validPriorities.includes(opts.priority as any)) {
+        throw new Error(`--priority must be one of: ${validPriorities.join(", ")}`);
+      }
       const tags = opts.tags ? opts.tags.split(",").map((t) => t.trim()) : undefined;
-      const result = await taskCommand(vaultFs, config.vaultPath, {
+      const result = await taskCommand(getVaultFs(), getConfig().vaultPath, {
         action: "add",
         title,
         project: opts.project,
@@ -322,8 +356,9 @@ taskCmd
         tags,
       });
       console.log(JSON.stringify({ task_id: result.task_id, path: result.path }));
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -339,7 +374,11 @@ taskCmd
   .option("-t, --title <text>", "New title")
   .action(async (taskId: string, opts: { project?: string; status?: string; priority?: string; blockedBy?: string[]; assignedTo?: string; title?: string }) => {
     try {
-      const result = await taskCommand(vaultFs, config.vaultPath, {
+      const validPriorities = ["p0", "p1", "p2"] as const;
+      if (opts.priority && !validPriorities.includes(opts.priority as any)) {
+        throw new Error(`--priority must be one of: ${validPriorities.join(", ")}`);
+      }
+      const result = await taskCommand(getVaultFs(), getConfig().vaultPath, {
         action: "update",
         taskId,
         project: opts.project,
@@ -350,8 +389,9 @@ taskCmd
         title: opts.title,
       });
       console.log(JSON.stringify({ task_id: result.task_id, updated_fields: result.updated_fields }));
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -362,7 +402,7 @@ taskCmd
   .option("-p, --project <slug>", "Project slug")
   .action(async (opts: { project?: string }) => {
     try {
-      const result = await taskCommand(vaultFs, config.vaultPath, {
+      const result = await taskCommand(getVaultFs(), getConfig().vaultPath, {
         action: "board",
         project: opts.project,
       });
@@ -377,8 +417,9 @@ taskCmd
           console.log(`  [${t.id}] [${t.priority}]${blocked}${assignee} ${t.title}`);
         }
       }
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -399,8 +440,12 @@ learnCmd
   .option("--source <tool>", "Source tool")
   .action(async (opts: { title: string; discovery: string; project?: string; tags?: string; confidence: string; source?: string }) => {
     try {
+      const validConfidences = ["high", "medium", "low"] as const;
+      if (!validConfidences.includes(opts.confidence as any)) {
+        throw new Error(`--confidence must be one of: ${validConfidences.join(", ")}`);
+      }
       const tags = opts.tags ? opts.tags.split(",").map((t) => t.trim()) : undefined;
-      const result = await learnCommand(vaultFs, config.vaultPath, {
+      const result = await learnCommand(getVaultFs(), getConfig().vaultPath, {
         action: "add",
         title: opts.title,
         discovery: opts.discovery,
@@ -410,8 +455,9 @@ learnCmd
         source: opts.source,
       });
       console.log(JSON.stringify({ learning_id: result.learning_id, path: result.path }));
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -423,7 +469,7 @@ learnCmd
   .option("--tag <tag>", "Filter by tag")
   .action(async (opts: { project?: string; tag?: string }) => {
     try {
-      const result = await learnCommand(vaultFs, config.vaultPath, {
+      const result = await learnCommand(getVaultFs(), getConfig().vaultPath, {
         action: "list",
         project: opts.project,
         tag: opts.tag,
@@ -441,8 +487,9 @@ learnCmd
       } else {
         console.log(JSON.stringify({ learnings: result.learnings }));
       }
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -455,7 +502,7 @@ program
   .option("-p, --project <slug>", "Project slug")
   .action(async (topic: string, opts: { content: string; project?: string }) => {
     try {
-      const result = await brainstormCommand(vaultFs, config.vaultPath, {
+      const result = await brainstormCommand(getVaultFs(), getConfig().vaultPath, {
         topic,
         content: opts.content,
         project: opts.project,
@@ -482,7 +529,7 @@ sessionCmd
   .option("--files <paths...>", "Files being touched")
   .action(async (opts: { tool: string; project?: string; task?: string; files?: string[] }) => {
     try {
-      const result = await sessionCommand(sessionRegistry, {
+      const result = await sessionCommand(getSessionRegistry(), {
         action: "register",
         tool: opts.tool,
         project: opts.project,
@@ -502,7 +549,7 @@ sessionCmd
   .description("Update session heartbeat")
   .action(async (sessionId: string) => {
     try {
-      await sessionCommand(sessionRegistry, { action: "heartbeat", sessionId });
+      await sessionCommand(getSessionRegistry(), { action: "heartbeat", sessionId });
       console.log("Heartbeat updated");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -521,7 +568,7 @@ sessionCmd
   .option("-p, --project <slug>", "Project slug")
   .action(async (sessionId: string, opts: { summary?: string; outcome?: string; files?: string[]; tasks?: string[]; project?: string }) => {
     try {
-      const result = await sessionCommand(sessionRegistry, {
+      const result = await sessionCommand(getSessionRegistry(), {
         action: "complete",
         sessionId,
         taskSummary: opts.summary,
@@ -529,7 +576,7 @@ sessionCmd
         filesTouched: opts.files,
         tasksCompleted: opts.tasks,
         project: opts.project,
-      }, vaultFs);
+      }, getVaultFs());
       console.log("Session completed");
       if (result.session_note_path) {
         console.log(`Session note: ${result.session_note_path}`);
@@ -546,7 +593,7 @@ sessionCmd
   .description("List active sessions")
   .action(async () => {
     try {
-      const result = await sessionCommand(sessionRegistry, { action: "list_active" });
+      const result = await sessionCommand(getSessionRegistry(), { action: "list_active" });
       if (!result.active_sessions?.length) {
         console.log("No active sessions");
         return;
@@ -576,7 +623,7 @@ graphCmd
       if (Number.isNaN(hops) || hops < 1) {
         throw new Error("--hops must be a positive integer");
       }
-      const result = await graphRelatedCommand(vaultFs, config.vaultPath, path, {
+      const result = await graphRelatedCommand(getVaultFs(), getConfig().vaultPath, path, {
         hops,
       });
       console.log(JSON.stringify(result, null, 2));
@@ -597,7 +644,7 @@ graphCmd
       if (Number.isNaN(limit) || limit < 1) {
         throw new Error("--limit must be a positive integer");
       }
-      const grouped = await graphCrossProjectCommand(config.vaultPath, query, {
+      const grouped = await graphCrossProjectCommand(getConfig().vaultPath, query, {
         limit,
       });
       for (const [project, results] of Object.entries(grouped)) {

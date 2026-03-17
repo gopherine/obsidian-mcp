@@ -23,12 +23,25 @@ import { brainstormCommand } from "./commands/brainstorm.js";
 import { sessionCommand } from "./commands/session.js";
 import { graphRelatedCommand, graphCrossProjectCommand } from "./commands/graph.js";
 import { initCommand } from "./commands/init.js";
-import { taskCommand } from "./commands/task.js";
-import { learnCommand } from "./commands/learn.js";
+import { taskCommand, type TaskStatus, type TaskPriority } from "./commands/task.js";
+import { learnCommand, type Confidence } from "./commands/learn.js";
 
-const config = loadConfig();
-const vaultFs = new VaultFS(config.vaultPath);
-const sessionRegistry = new SessionRegistryManager(config.vaultPath, config.sessionTtlHours);
+let _config: ReturnType<typeof loadConfig> | null = null;
+let _vaultFs: VaultFS | null = null;
+let _sessionRegistry: SessionRegistryManager | null = null;
+
+function getConfig() {
+  if (!_config) _config = loadConfig();
+  return _config;
+}
+function getVaultFs() {
+  if (!_vaultFs) _vaultFs = new VaultFS(getConfig().vaultPath);
+  return _vaultFs;
+}
+function getSessionRegistry() {
+  if (!_sessionRegistry) _sessionRegistry = new SessionRegistryManager(getConfig().vaultPath, getConfig().sessionTtlHours);
+  return _sessionRegistry;
+}
 
 const server = new Server(
   { name: "obsidian-kb", version: "0.2.0" },
@@ -215,12 +228,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error("Missing required field: path (string)");
         }
         try {
-          const content = await readCommand(vaultFs, path);
+          const content = await readCommand(getVaultFs(), path);
           return { content: [{ type: "text", text: content }] };
         } catch (readErr: any) {
           // Only fall through to directory listing on FILE_NOT_FOUND
           if (readErr instanceof VaultError && readErr.code === "FILE_NOT_FOUND") {
-            const entries = await listCommand(vaultFs, path, depth ?? 1);
+            const entries = await listCommand(getVaultFs(), path, depth ?? 1);
             return { content: [{ type: "text", text: JSON.stringify(entries, null, 2) }] };
           }
           throw readErr; // Re-throw security and other errors
@@ -228,19 +241,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "vault_write": {
-        const { path, content, mode, frontmatter } = args as any;
+        const { path, content, mode, frontmatter } = args as Record<string, unknown>;
         if (!path || typeof path !== "string") {
           throw new Error("Missing required field: path (string)");
         }
         if (content === undefined || content === null || typeof content !== "string") {
           throw new Error("Missing required field: content (string)");
         }
-        const result = await writeCommand(vaultFs, path, content, { mode, frontmatter });
+        const result = await writeCommand(getVaultFs(), path as string, content as string, {
+          mode: typeof mode === "string" ? mode as "overwrite" | "append" | "prepend" : undefined,
+          frontmatter: typeof frontmatter === "object" && frontmatter !== null ? frontmatter as Record<string, unknown> : undefined,
+        });
         return { content: [{ type: "text", text: JSON.stringify(result) }] };
       }
 
       case "vault_search": {
-        const { query, path_filter, mode, limit } = args as any;
+        const { query, path_filter, mode, limit } = args as Record<string, unknown>;
         if (!query || typeof query !== "string") {
           throw new Error("Missing required field: query (string)");
         }
@@ -255,91 +271,120 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 filters[part.slice(0, idx)] = part.slice(idx + 1);
               }
             }
-            const results = await searchStructured(config.vaultPath, filters, { limit });
+            const results = await searchStructured(getConfig().vaultPath, filters, { limit: typeof limit === "number" ? limit : undefined });
             return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
           }
-          const results = await searchText(config.vaultPath, query, {
-            pathFilter: path_filter,
-            limit,
+          const results = await searchText(getConfig().vaultPath, query, {
+            pathFilter: typeof path_filter === "string" ? path_filter : undefined,
+            limit: typeof limit === "number" ? limit : undefined,
           });
           return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
         }
-        const results = await searchCommand(config.vaultPath, query, {
-          limit,
+        const results = await searchCommand(getConfig().vaultPath, query, {
+          limit: typeof limit === "number" ? limit : undefined,
           structured: mode === "structured",
         });
         return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
       }
 
       case "vault_project_context": {
-        const { project, detail_level } = args as any;
-        const result = await contextCommand(vaultFs, config.vaultPath, {
-          project,
-          detailLevel: detail_level,
-          maxTokens: config.maxInjectTokens,
+        const { project, detail_level } = args as Record<string, unknown>;
+        const result = await contextCommand(getVaultFs(), getConfig().vaultPath, {
+          project: typeof project === "string" ? project : undefined,
+          detailLevel: typeof detail_level === "string" ? detail_level as "summary" | "full" : undefined,
+          maxTokens: getConfig().maxInjectTokens,
         });
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "vault_init": {
-        const { project_path, slug } = args as { project_path: string; slug?: string };
-        const result = await initCommand(project_path, slug);
+        const { project_path, slug } = args as { project_path?: unknown; slug?: unknown };
+        if (!project_path || typeof project_path !== "string") {
+          throw new Error("Missing required field: project_path (string)");
+        }
+        const result = await initCommand(project_path, typeof slug === "string" ? slug : undefined);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "vault_decide": {
-        const { title, context: ctx, decision, alternatives, consequences, project } = args as any;
+        const { title, context: ctx, decision, alternatives, consequences, project } = args as Record<string, unknown>;
         if (!title || typeof title !== "string") {
           throw new Error("Missing required field: title (string)");
         }
         if (!decision || typeof decision !== "string") {
           throw new Error("Missing required field: decision (string)");
         }
-        const result = await decideCommand(vaultFs, config.vaultPath, {
-          title,
-          context: ctx ?? "",
-          decision,
-          alternatives,
-          consequences,
-          project,
+        const result = await decideCommand(getVaultFs(), getConfig().vaultPath, {
+          title: title as string,
+          context: typeof ctx === "string" ? ctx : "",
+          decision: decision as string,
+          alternatives: typeof alternatives === "string" ? alternatives : undefined,
+          consequences: typeof consequences === "string" ? consequences : undefined,
+          project: typeof project === "string" ? project : undefined,
         });
         return { content: [{ type: "text", text: JSON.stringify(result) }] };
       }
 
       case "vault_task": {
-        const { action, title, task_id, status, priority, blocked_by, assigned_to, tags, project } = args as any;
-        const result = await taskCommand(vaultFs, config.vaultPath, {
-          action,
-          title,
-          taskId: task_id,
-          status,
-          priority,
-          blockedBy: blocked_by,
-          assignedTo: assigned_to,
-          tags,
-          project,
+        const { action, title, task_id, status, priority, blocked_by, assigned_to, tags, project } = args as Record<string, unknown>;
+        if (!action || typeof action !== "string") {
+          throw new Error("Missing required field: action (string)");
+        }
+        const validActions = ["add", "list", "update", "board"] as const;
+        if (!validActions.includes(action as any)) {
+          throw new Error(`Invalid action: ${action}. Must be one of: ${validActions.join(", ")}`);
+        }
+        if (action === "add" && (!title || typeof title !== "string")) {
+          throw new Error("Missing required field for add: title (string)");
+        }
+        if (action === "update" && (!task_id || typeof task_id !== "string")) {
+          throw new Error("Missing required field for update: task_id (string)");
+        }
+        const result = await taskCommand(getVaultFs(), getConfig().vaultPath, {
+          action: action as "add" | "list" | "update" | "board",
+          title: typeof title === "string" ? title : undefined,
+          taskId: typeof task_id === "string" ? task_id : undefined,
+          status: typeof status === "string" ? status as TaskStatus : undefined,
+          priority: typeof priority === "string" ? priority as TaskPriority : undefined,
+          blockedBy: Array.isArray(blocked_by) ? blocked_by : undefined,
+          assignedTo: typeof assigned_to === "string" ? assigned_to : undefined,
+          tags: Array.isArray(tags) ? tags : undefined,
+          project: typeof project === "string" ? project : undefined,
         });
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "vault_learn": {
-        const { action, title, discovery, project, tags, confidence, source, session_id, tag } = args as any;
-        const result = await learnCommand(vaultFs, config.vaultPath, {
-          action,
-          title,
-          discovery,
-          project,
-          tags,
-          confidence,
-          source,
-          sessionId: session_id,
-          tag,
+        const { action, title, discovery, project, tags, confidence, source, session_id, tag } = args as Record<string, unknown>;
+        if (!action || typeof action !== "string") {
+          throw new Error("Missing required field: action (string)");
+        }
+        const validLearnActions = ["add", "list"] as const;
+        if (!validLearnActions.includes(action as any)) {
+          throw new Error(`Invalid action: ${action}. Must be one of: ${validLearnActions.join(", ")}`);
+        }
+        if (action === "add" && (!title || typeof title !== "string")) {
+          throw new Error("Missing required field for add: title (string)");
+        }
+        if (action === "add" && (!discovery || typeof discovery !== "string")) {
+          throw new Error("Missing required field for add: discovery (string)");
+        }
+        const result = await learnCommand(getVaultFs(), getConfig().vaultPath, {
+          action: action as "add" | "list",
+          title: typeof title === "string" ? title : undefined,
+          discovery: typeof discovery === "string" ? discovery : undefined,
+          project: typeof project === "string" ? project : undefined,
+          tags: Array.isArray(tags) ? tags : undefined,
+          confidence: typeof confidence === "string" ? confidence as Confidence : undefined,
+          source: typeof source === "string" ? source : undefined,
+          sessionId: typeof session_id === "string" ? session_id : undefined,
+          tag: typeof tag === "string" ? tag : undefined,
         });
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "vault_todo": {
-        const { action, item, priority, project } = args as any;
+        const { action, item, priority, project } = args as Record<string, unknown>;
         if (!action || typeof action !== "string") {
           throw new Error("Missing required field: action (string)");
         }
@@ -347,33 +392,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!validTodoActions.includes(action as any)) {
           throw new Error(`Invalid action: ${action}. Must be one of: ${validTodoActions.join(", ")}`);
         }
-        const result = await todoCommand(vaultFs, config.vaultPath, {
+        const result = await todoCommand(getVaultFs(), getConfig().vaultPath, {
           action: action as "list" | "add" | "complete" | "remove",
-          item,
-          priority,
-          project,
+          item: typeof item === "string" ? item : undefined,
+          priority: typeof priority === "string" ? priority as "high" | "medium" | "low" : undefined,
+          project: typeof project === "string" ? project : undefined,
         });
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "vault_brainstorm": {
-        const { topic, content, project } = args as any;
+        const { topic, content, project } = args as Record<string, unknown>;
         if (!topic || typeof topic !== "string") {
           throw new Error("Missing required field: topic (string)");
         }
         if (!content || typeof content !== "string") {
           throw new Error("Missing required field: content (string)");
         }
-        const result = await brainstormCommand(vaultFs, config.vaultPath, {
-          topic,
-          content,
-          project,
+        const result = await brainstormCommand(getVaultFs(), getConfig().vaultPath, {
+          topic: topic as string,
+          content: content as string,
+          project: typeof project === "string" ? project : undefined,
         });
         return { content: [{ type: "text", text: JSON.stringify(result) }] };
       }
 
       case "vault_session": {
-        const { action, tool, project, task_summary, files_touched, session_id, outcome, tasks_completed } = args as any;
+        const { action, tool, project, task_summary, files_touched, session_id, outcome, tasks_completed } = args as Record<string, unknown>;
         if (!action || typeof action !== "string") {
           throw new Error("Missing required field: action (string)");
         }
@@ -381,16 +426,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!validSessionActions.includes(action as any)) {
           throw new Error(`Invalid action: ${action}. Must be one of: ${validSessionActions.join(", ")}`);
         }
-        const result = await sessionCommand(sessionRegistry, {
+        const result = await sessionCommand(getSessionRegistry(), {
           action: action as "register" | "heartbeat" | "complete" | "list_active",
-          tool,
-          project,
-          taskSummary: task_summary,
-          filesTouched: files_touched,
-          sessionId: session_id,
-          outcome,
-          tasksCompleted: tasks_completed,
-        }, vaultFs);
+          tool: typeof tool === "string" ? tool : undefined,
+          project: typeof project === "string" ? project : undefined,
+          taskSummary: typeof task_summary === "string" ? task_summary : undefined,
+          filesTouched: Array.isArray(files_touched) ? files_touched : undefined,
+          sessionId: typeof session_id === "string" ? session_id : undefined,
+          outcome: typeof outcome === "string" ? outcome : undefined,
+          tasksCompleted: Array.isArray(tasks_completed) ? tasks_completed : undefined,
+        }, getVaultFs());
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
@@ -425,7 +470,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
   try {
     if (uri === "vault://coordination/active-sessions") {
-      const sessions = await sessionRegistry.listActive();
+      const sessions = await getSessionRegistry().listActive();
       return {
         contents: [{ uri, mimeType: "application/json", text: JSON.stringify(sessions, null, 2) }],
       };
@@ -435,10 +480,10 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const projectMatch = uri.match(/^vault:\/\/project\/([^/]+)\/context$/);
     if (projectMatch) {
       const slug = projectMatch[1];
-      const result = await contextCommand(vaultFs, config.vaultPath, {
+      const result = await contextCommand(getVaultFs(), getConfig().vaultPath, {
         project: slug,
         detailLevel: "summary",
-        maxTokens: config.maxInjectTokens,
+        maxTokens: getConfig().maxInjectTokens,
       });
       return {
         contents: [{ uri, mimeType: "text/markdown", text: result.context_md }],
@@ -485,15 +530,15 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
   try {
     if (name === "inject-project-context") {
       const project = args?.project as string | undefined;
-      const result = await contextCommand(vaultFs, config.vaultPath, {
+      const result = await contextCommand(getVaultFs(), getConfig().vaultPath, {
         project,
         detailLevel: "summary",
-        maxTokens: config.maxInjectTokens,
+        maxTokens: getConfig().maxInjectTokens,
       });
 
       let todoSection = "";
       try {
-        const todos = await todoCommand(vaultFs, config.vaultPath, {
+        const todos = await todoCommand(getVaultFs(), getConfig().vaultPath, {
           action: "list",
           project: result.project_slug,
           blockersOnly: true,

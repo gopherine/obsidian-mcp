@@ -42,7 +42,7 @@ export function loadConfig(): Config {
 
   return {
     vaultPath,
-    maxInjectTokens: Number.isNaN(maxInjectTokens) ? 1500 : maxInjectTokens,
-    sessionTtlHours: Number.isNaN(sessionTtlHours) ? 2 : sessionTtlHours,
+    maxInjectTokens: Math.max(100, Number.isNaN(maxInjectTokens) ? 1500 : maxInjectTokens),
+    sessionTtlHours: Math.max(1, Number.isNaN(sessionTtlHours) ? 2 : sessionTtlHours),
   };
 }

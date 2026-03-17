@@ -26,8 +26,13 @@ const VALID_STATUSES = [
  * Parse markdown content with YAML frontmatter.
  */
 export function parseFrontmatter(content: string): { data: Frontmatter; content: string } {
-  const parsed = matter(content);
-  return { data: parsed.data as Frontmatter, content: parsed.content };
+  try {
+    const parsed = matter(content);
+    return { data: parsed.data as Frontmatter, content: parsed.content };
+  } catch {
+    // Malformed YAML — return empty frontmatter and raw content
+    return { data: {}, content };
+  }
 }
 
 /**

@@ -18,8 +18,12 @@ export function truncateToTokenBudget(text: string, maxTokens: number): { text: 
     return { text, truncated: false };
   }
 
+  // Reserve ~20 tokens for the truncation suffix indicator
+  const reservedTokens = 20;
+  const effectiveBudget = Math.max(0, maxTokens - reservedTokens);
+
   // Convert token budget to approximate character limit
-  const charLimit = Math.floor(maxTokens / 1.15 * 4);
+  const charLimit = Math.floor(effectiveBudget / 1.15 * 4);
 
   // Try to cut at a section boundary
   const truncated = text.slice(0, charLimit);

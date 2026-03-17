@@ -103,8 +103,9 @@ export async function todoCommand(
     const filtered = bodyLines.filter((line) => !removePattern.test(line));
 
     const mergedFm = mergeFrontmatter(data, {});
-    await vaultFs.write(todoPath, serializeFrontmatter(mergedFm, filtered.join("\n")));
-    return { todos: parseTodos(serializeFrontmatter(mergedFm, filtered.join("\n"))) };
+    const updatedContent = serializeFrontmatter(mergedFm, filtered.join("\n"));
+    await vaultFs.write(todoPath, updatedContent);
+    return { todos: parseTodos(updatedContent) };
   }
 
   throw new Error(`Unknown action: ${options.action}`);
