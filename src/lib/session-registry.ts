@@ -11,6 +11,7 @@ export interface Session {
   files_touched: string[];
   started_at: string;
   last_heartbeat: string;
+  completed_at: string | null;
   status: "active" | "stale" | "completed";
 }
 
@@ -58,6 +59,7 @@ export class SessionRegistryManager {
       files_touched: filesTouched,
       started_at: now,
       last_heartbeat: now,
+      completed_at: null,
       status: "active",
     };
 
@@ -65,12 +67,13 @@ export class SessionRegistryManager {
       const registry = await this.readRegistry();
       this.cleanStale(registry);
 
-      // Detect conflicts
+      // Detect conflicts (use Set for O(n+m) intersection)
       const conflicts: Conflict[] = [];
       if (filesTouched.length > 0) {
+        const touchedSet = new Set(filesTouched);
         for (const existing of registry.sessions) {
           if (existing.status !== "active") continue;
-          const overlap = existing.files_touched.filter((f) => filesTouched.includes(f));
+          const overlap = existing.files_touched.filter((f) => touchedSet.has(f));
           if (overlap.length > 0) {
             conflicts.push({
               session_id: existing.id,
@@ -112,12 +115,13 @@ export class SessionRegistryManager {
       const session = registry.sessions.find((s) => s.id === sessionId);
       if (session) {
         session.status = "completed";
+        session.completed_at = new Date().toISOString();
         if (summary) session.task_summary = summary;
       }
-      // Remove completed sessions older than 24 hours
+      // Remove completed sessions older than 24 hours (based on completion time)
       const cutoff = Date.now() - 24 * 60 * 60 * 1000;
       registry.sessions = registry.sessions.filter(
-        (s) => s.status !== "completed" || new Date(s.started_at).getTime() > cutoff
+        (s) => s.status !== "completed" || new Date(s.completed_at ?? s.started_at).getTime() > cutoff
       );
       await this.writeRegistry(registry);
     });

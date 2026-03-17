@@ -30,7 +30,17 @@ async function loadProjectMap(vaultPath: string): Promise<ProjectMap> {
   const mapPath = resolve(vaultPath, "project-map.json");
   try {
     const raw = await readFile(mapPath, "utf-8");
-    const map = JSON.parse(raw) as ProjectMap;
+    const parsed = JSON.parse(raw);
+    // Validate: must be a plain object with string values
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    const map: ProjectMap = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (typeof value === "string") {
+        map[key] = value;
+      }
+    }
     cache = { map, time: now, vaultPath };
     return map;
   } catch {

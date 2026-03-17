@@ -3,6 +3,7 @@ import { promisify } from "util";
 import { resolve, relative } from "path";
 import { readFile } from "fs/promises";
 import { parseFrontmatter } from "./frontmatter.js";
+import { escapeRegex } from "./escape-regex.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -10,13 +11,6 @@ export interface SearchResult {
   path: string;
   snippet: string;
   line: number;
-}
-
-/**
- * Escape a string for use in a regex pattern.
- */
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
@@ -58,6 +52,7 @@ export async function searchText(
     "--max-count", "1", // one match per file
     "--type", "md",
     "--ignore-case",
+    "--fixed-strings",
     query,
   ];
 

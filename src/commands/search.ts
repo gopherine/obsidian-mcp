@@ -15,9 +15,13 @@ export async function searchCommand(
     // Parse structured query: "type:adr project:permanu status:active"
     const filters: Record<string, string> = {};
     for (const part of query.split(/\s+/)) {
-      const [key, value] = part.split(":");
-      if (key && value) {
-        filters[key] = value;
+      const idx = part.indexOf(":");
+      if (idx > 0) {
+        const key = part.slice(0, idx);
+        const value = part.slice(idx + 1);
+        if (key && value) {
+          filters[key] = value;
+        }
       }
     }
     if (project && !filters.project) {

@@ -29,8 +29,9 @@ export class VaultFS {
       throw new VaultError("PERMISSION_DENIED", `Path traversal not allowed: ${relativePath}`);
     }
 
-    // Reject personal vault references (case-insensitive)
-    if (relativePath.toLowerCase().includes("personal")) {
+    // Reject personal vault references (case-insensitive, segment-level match)
+    const segments = relativePath.toLowerCase().split("/");
+    if (segments.some((seg) => seg === "personal")) {
       throw new VaultError("PERMISSION_DENIED", `Cannot access personal vault: ${relativePath}`);
     }
 
@@ -38,7 +39,7 @@ export class VaultFS {
 
     // Double-check the resolved path is within vault
     const rel = relative(this.root, resolved);
-    if (rel.startsWith("..") || resolve(resolved) !== resolved.replace(/\/$/, "")) {
+    if (rel.startsWith("..")) {
       throw new VaultError("PERMISSION_DENIED", `Path escapes vault: ${relativePath}`);
     }
 
@@ -107,6 +108,9 @@ export class VaultFS {
       // Skip hidden files/dirs (.obsidian, .git, etc.)
       if (entry.name.startsWith(".")) continue;
 
+      // Skip symlinks to prevent following links outside the vault
+      if (entry.isSymbolicLink()) continue;
+
       const entryRel = relDir ? `${relDir}/${entry.name}` : entry.name;
 
       if (entry.isDirectory()) {
@@ -133,12 +137,18 @@ export class VaultFS {
    */
   async verifyNoSymlinkEscape(relativePath: string): Promise<void> {
     const abs = this.resolve(relativePath);
-    if (!existsSync(abs)) return; // File doesn't exist yet, OK
 
-    const real = await realpath(abs);
-    const rel = relative(this.root, real);
-    if (rel.startsWith("..")) {
-      throw new VaultError("PERMISSION_DENIED", `Symlink escapes vault: ${relativePath}`);
+    try {
+      const real = await realpath(abs);
+      const rel = relative(this.root, real);
+      if (rel.startsWith("..")) {
+        throw new VaultError("PERMISSION_DENIED", `Symlink escapes vault: ${relativePath}`);
+      }
+    } catch (e: any) {
+      if (e instanceof VaultError) throw e;
+      // ENOENT means file doesn't exist yet — OK for writes
+      if (e.code === "ENOENT") return;
+      throw e;
     }
   }
 }

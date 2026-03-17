@@ -156,6 +156,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       case "vault_read": {
         const { path, depth } = args as { path: string; depth?: number };
+        if (!path || typeof path !== "string") {
+          throw new Error("Missing required field: path (string)");
+        }
         try {
           const content = await readCommand(vaultFs, path);
           return { content: [{ type: "text", text: content }] };
@@ -171,14 +174,42 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "vault_write": {
         const { path, content, mode, frontmatter } = args as any;
+        if (!path || typeof path !== "string") {
+          throw new Error("Missing required field: path (string)");
+        }
+        if (content === undefined || content === null || typeof content !== "string") {
+          throw new Error("Missing required field: content (string)");
+        }
         const result = await writeCommand(vaultFs, path, content, { mode, frontmatter });
         return { content: [{ type: "text", text: JSON.stringify(result) }] };
       }
 
       case "vault_search": {
         const { query, path_filter, mode, limit } = args as any;
+        if (!query || typeof query !== "string") {
+          throw new Error("Missing required field: query (string)");
+        }
+        if (path_filter) {
+          // Pass path_filter directly to searchText/searchStructured, not as project
+          const { searchText, searchStructured } = await import("./lib/search-engine.js");
+          if (mode === "structured") {
+            const filters: Record<string, string> = {};
+            for (const part of query.split(/\s+/)) {
+              const idx = part.indexOf(":");
+              if (idx > 0) {
+                filters[part.slice(0, idx)] = part.slice(idx + 1);
+              }
+            }
+            const results = await searchStructured(config.vaultPath, filters, { limit });
+            return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+          }
+          const results = await searchText(config.vaultPath, query, {
+            pathFilter: path_filter,
+            limit,
+          });
+          return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+        }
         const results = await searchCommand(config.vaultPath, query, {
-          project: path_filter,
           limit,
           structured: mode === "structured",
         });
@@ -197,6 +228,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "vault_decide": {
         const { title, context: ctx, decision, alternatives, consequences, project } = args as any;
+        if (!title || typeof title !== "string") {
+          throw new Error("Missing required field: title (string)");
+        }
+        if (!decision || typeof decision !== "string") {
+          throw new Error("Missing required field: decision (string)");
+        }
         const result = await decideCommand(vaultFs, config.vaultPath, {
           title,
           context: ctx ?? "",
@@ -210,8 +247,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "vault_todo": {
         const { action, item, priority, project } = args as any;
+        if (!action || typeof action !== "string") {
+          throw new Error("Missing required field: action (string)");
+        }
+        const validTodoActions = ["list", "add", "complete", "remove"] as const;
+        if (!validTodoActions.includes(action as any)) {
+          throw new Error(`Invalid action: ${action}. Must be one of: ${validTodoActions.join(", ")}`);
+        }
         const result = await todoCommand(vaultFs, config.vaultPath, {
-          action,
+          action: action as "list" | "add" | "complete" | "remove",
           item,
           priority,
           project,
@@ -221,6 +265,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "vault_brainstorm": {
         const { topic, content, project } = args as any;
+        if (!topic || typeof topic !== "string") {
+          throw new Error("Missing required field: topic (string)");
+        }
+        if (!content || typeof content !== "string") {
+          throw new Error("Missing required field: content (string)");
+        }
         const result = await brainstormCommand(vaultFs, config.vaultPath, {
           topic,
           content,
@@ -231,8 +281,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "vault_session": {
         const { action, tool, project, task_summary, files_touched, session_id } = args as any;
+        if (!action || typeof action !== "string") {
+          throw new Error("Missing required field: action (string)");
+        }
+        const validSessionActions = ["register", "heartbeat", "complete", "list_active"] as const;
+        if (!validSessionActions.includes(action as any)) {
+          throw new Error(`Invalid action: ${action}. Must be one of: ${validSessionActions.join(", ")}`);
+        }
         const result = await sessionCommand(sessionRegistry, {
-          action,
+          action: action as "register" | "heartbeat" | "complete" | "list_active",
           tool,
           project,
           taskSummary: task_summary,
@@ -245,10 +302,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       default:
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     const code = e instanceof VaultError ? e.code : "INTERNAL_ERROR";
+    const msg = e instanceof Error ? e.message : String(e);
     return {
-      content: [{ type: "text", text: JSON.stringify({ error: code, message: e.message }) }],
+      content: [{ type: "text", text: JSON.stringify({ error: code, message: msg }) }],
       isError: true,
     };
   }
@@ -270,28 +328,39 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => ({
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const { uri } = request.params;
 
-  if (uri === "vault://coordination/active-sessions") {
-    const sessions = await sessionRegistry.listActive();
-    return {
-      contents: [{ uri, mimeType: "application/json", text: JSON.stringify(sessions, null, 2) }],
-    };
-  }
+  try {
+    if (uri === "vault://coordination/active-sessions") {
+      const sessions = await sessionRegistry.listActive();
+      return {
+        contents: [{ uri, mimeType: "application/json", text: JSON.stringify(sessions, null, 2) }],
+      };
+    }
 
-  // Dynamic project context resources: vault://project/<slug>/context
-  const projectMatch = uri.match(/^vault:\/\/project\/([^/]+)\/context$/);
-  if (projectMatch) {
-    const slug = projectMatch[1];
-    const result = await contextCommand(vaultFs, config.vaultPath, {
-      project: slug,
-      detailLevel: "summary",
-      maxTokens: config.maxInjectTokens,
-    });
-    return {
-      contents: [{ uri, mimeType: "text/markdown", text: result.context_md }],
-    };
-  }
+    // Dynamic project context resources: vault://project/<slug>/context
+    const projectMatch = uri.match(/^vault:\/\/project\/([^/]+)\/context$/);
+    if (projectMatch) {
+      const slug = projectMatch[1];
+      const result = await contextCommand(vaultFs, config.vaultPath, {
+        project: slug,
+        detailLevel: "summary",
+        maxTokens: config.maxInjectTokens,
+      });
+      return {
+        contents: [{ uri, mimeType: "text/markdown", text: result.context_md }],
+      };
+    }
 
-  throw new Error(`Unknown resource: ${uri}`);
+    return {
+      contents: [{ uri, mimeType: "text/plain", text: `Unknown resource: ${uri}` }],
+      isError: true,
+    } as any;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return {
+      contents: [{ uri, mimeType: "text/plain", text: JSON.stringify({ error: "INTERNAL_ERROR", message: msg }) }],
+      isError: true,
+    } as any;
+  }
 });
 
 // ── Prompts ───────────────────────────────────────────
@@ -318,50 +387,51 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => ({
 server.setRequestHandler(GetPromptRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
-  if (name === "inject-project-context") {
-    const project = args?.project as string | undefined;
-    const result = await contextCommand(vaultFs, config.vaultPath, {
-      project,
-      detailLevel: "summary",
-      maxTokens: config.maxInjectTokens,
-    });
-
-    let todoSection = "";
-    try {
-      const todos = await todoCommand(vaultFs, config.vaultPath, {
-        action: "list",
-        project: result.project_slug,
-        blockersOnly: true,
+  try {
+    if (name === "inject-project-context") {
+      const project = args?.project as string | undefined;
+      const result = await contextCommand(vaultFs, config.vaultPath, {
+        project,
+        detailLevel: "summary",
+        maxTokens: config.maxInjectTokens,
       });
-      if (todos.todos.length > 0) {
-        todoSection = "\n\n## Active Blockers\n" +
-          todos.todos.map((t) => `- [${t.priority.toUpperCase()}] ${t.text}`).join("\n");
+
+      let todoSection = "";
+      try {
+        const todos = await todoCommand(vaultFs, config.vaultPath, {
+          action: "list",
+          project: result.project_slug,
+          blockersOnly: true,
+        });
+        if (todos.todos.length > 0) {
+          todoSection = "\n\n## Active Blockers\n" +
+            todos.todos.map((t) => `- [${t.priority.toUpperCase()}] ${t.text}`).join("\n");
+        }
+      } catch {
+        // No todos file, skip
       }
-    } catch {
-      // No todos file, skip
+
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: `## Project Context: ${result.project_slug}\n\n${result.context_md}${todoSection}`,
+            },
+          },
+        ],
+      };
     }
 
-    return {
-      messages: [
-        {
-          role: "user",
-          content: {
-            type: "text",
-            text: `## Project Context: ${result.project_slug}\n\n${result.context_md}${todoSection}`,
-          },
-        },
-      ],
-    };
-  }
-
-  if (name === "summarize-session") {
-    return {
-      messages: [
-        {
-          role: "user",
-          content: {
-            type: "text",
-            text: `Please summarize this session in the following format for the knowledge vault:
+    if (name === "summarize-session") {
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: `Please summarize this session in the following format for the knowledge vault:
 
 ## Session Summary
 
@@ -380,13 +450,37 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
 
 ### Files modified
 - [list of files changed]`,
+            },
+          },
+        ],
+      };
+    }
+
+    return {
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `Unknown prompt: ${name}`,
+          },
+        },
+      ],
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return {
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `Error loading prompt "${name}": ${msg}`,
           },
         },
       ],
     };
   }
-
-  throw new Error(`Unknown prompt: ${name}`);
 });
 
 // ── Start ─────────────────────────────────────────────

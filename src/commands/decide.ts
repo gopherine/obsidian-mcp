@@ -39,15 +39,18 @@ export async function decideCommand(
         if (num >= nextNumber) nextNumber = num + 1;
       }
     }
-  } catch {
+  } catch (e) {
     // Directory doesn't exist yet, start at 1
+    if (e instanceof Error && !e.message.includes("not found") && !e.message.includes("Not found")) {
+      throw e;
+    }
   }
 
   const paddedNumber = String(nextNumber).padStart(3, "0");
   const slug = options.title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-|-$/g, "") || "untitled";
   const filename = `${paddedNumber}-${slug}.md`;
   const filePath = `${decisionsDir}/${filename}`;
 

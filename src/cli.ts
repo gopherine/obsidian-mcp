@@ -33,8 +33,9 @@ program
     try {
       const content = await readCommand(vaultFs, path);
       process.stdout.write(content);
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -46,12 +47,17 @@ program
   .option("-d, --depth <number>", "Listing depth", "1")
   .action(async (path: string, opts: { depth: string }) => {
     try {
-      const entries = await listCommand(vaultFs, path, parseInt(opts.depth, 10));
+      const depth = parseInt(opts.depth, 10);
+      if (Number.isNaN(depth) || depth < 1) {
+        throw new Error("--depth must be a positive integer");
+      }
+      const entries = await listCommand(vaultFs, path, depth);
       for (const entry of entries) {
         console.log(entry);
       }
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -65,14 +71,19 @@ program
   .option("-f, --frontmatter <json>", "Frontmatter as JSON")
   .action(async (path: string, opts: { content: string; mode: string; frontmatter?: string }) => {
     try {
+      const validModes = ["overwrite", "append", "prepend"] as const;
+      if (!validModes.includes(opts.mode as any)) {
+        throw new Error(`--mode must be one of: ${validModes.join(", ")}`);
+      }
       const fm = opts.frontmatter ? JSON.parse(opts.frontmatter) : undefined;
       const result = await writeCommand(vaultFs, path, opts.content, {
         mode: opts.mode as "overwrite" | "append" | "prepend",
         frontmatter: fm,
       });
       console.log(JSON.stringify(result));
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -86,8 +97,9 @@ program
     try {
       const result = await writeCommand(vaultFs, path, opts.content, { mode: "append" });
       console.log(JSON.stringify(result));
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -101,14 +113,19 @@ program
   .option("-s, --structured", "Structured frontmatter search")
   .action(async (query: string, opts: { project?: string; limit: string; structured?: boolean }) => {
     try {
+      const limit = parseInt(opts.limit, 10);
+      if (Number.isNaN(limit) || limit < 1) {
+        throw new Error("--limit must be a positive integer");
+      }
       const results = await searchCommand(config.vaultPath, query, {
         project: opts.project,
-        limit: parseInt(opts.limit, 10),
+        limit,
         structured: opts.structured,
       });
       console.log(JSON.stringify(results, null, 2));
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -127,8 +144,9 @@ program
         maxTokens: config.maxInjectTokens,
       });
       console.log(result.context_md);
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -154,8 +172,9 @@ program
         project: opts.project,
       });
       console.log(JSON.stringify(result));
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -182,8 +201,9 @@ todoCmd
         const priority = todo.priority === "high" ? "P0" : todo.priority === "low" ? "P2" : "P1";
         console.log(`${marker} [${priority}] ${todo.text}`);
       }
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -202,8 +222,9 @@ todoCmd
         project: opts.project,
       });
       console.log(`Added: ${text}`);
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -220,8 +241,9 @@ todoCmd
         project: opts.project,
       });
       console.log(`Completed: ${text}`);
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -240,8 +262,9 @@ program
         project: opts.project,
       });
       console.log(JSON.stringify(result));
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -268,8 +291,9 @@ sessionCmd
         filesTouched: opts.files,
       });
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -281,8 +305,9 @@ sessionCmd
     try {
       await sessionCommand(sessionRegistry, { action: "heartbeat", sessionId });
       console.log("Heartbeat updated");
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -299,8 +324,9 @@ sessionCmd
         taskSummary: opts.summary,
       });
       console.log("Session completed");
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -318,8 +344,9 @@ sessionCmd
       for (const s of result.active_sessions) {
         console.log(`[${s.tool}] ${s.project ?? "unknown"}: ${s.task_summary ?? "no task"} (${s.id})`);
       }
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -335,12 +362,17 @@ graphCmd
   .option("--hops <number>", "Traversal depth", "1")
   .action(async (path: string, opts: { hops: string }) => {
     try {
+      const hops = parseInt(opts.hops, 10);
+      if (Number.isNaN(hops) || hops < 1) {
+        throw new Error("--hops must be a positive integer");
+      }
       const result = await graphRelatedCommand(vaultFs, config.vaultPath, path, {
-        hops: parseInt(opts.hops, 10),
+        hops,
       });
       console.log(JSON.stringify(result, null, 2));
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });
@@ -351,8 +383,12 @@ graphCmd
   .option("-l, --limit <number>", "Max results", "20")
   .action(async (query: string, opts: { limit: string }) => {
     try {
+      const limit = parseInt(opts.limit, 10);
+      if (Number.isNaN(limit) || limit < 1) {
+        throw new Error("--limit must be a positive integer");
+      }
       const grouped = await graphCrossProjectCommand(config.vaultPath, query, {
-        limit: parseInt(opts.limit, 10),
+        limit,
       });
       for (const [project, results] of Object.entries(grouped)) {
         console.log(`\n${project} (${results.length} matches):`);
@@ -360,8 +396,9 @@ graphCmd
           console.log(`  ${r.path}: ${r.snippet.slice(0, 100)}`);
         }
       }
-    } catch (e: any) {
-      console.error(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`Error: ${msg}`);
       process.exit(1);
     }
   });

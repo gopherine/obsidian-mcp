@@ -26,12 +26,19 @@ export async function writeCommand(
     const existing = await vaultFs.read(path);
     const { data, content: body } = parseFrontmatter(existing);
     const updatedBody = body.trimEnd() + "\n" + content;
-    const updatedFm = mergeFrontmatter(data, {});
+    const updatedFm = mergeFrontmatter(data, fmOverrides ?? {});
     const result = await vaultFs.write(path, serializeFrontmatter(updatedFm, updatedBody));
     return { written: true, ...result };
   }
 
   if (mode === "prepend") {
+    const fileExists = await vaultFs.exists(path);
+    if (!fileExists) {
+      // Create new file with content
+      const fm = fmOverrides ? createFrontmatter(fmOverrides) : createFrontmatter({});
+      const result = await vaultFs.write(path, serializeFrontmatter(fm, content));
+      return { written: true, ...result };
+    }
     const existing = await vaultFs.read(path);
     const { data, content: body } = parseFrontmatter(existing);
     const updated = mergeFrontmatter(data, fmOverrides ?? {});

@@ -1,5 +1,6 @@
 import { VaultFS } from "../lib/vault-fs.js";
 import { searchText, type SearchResult } from "../lib/search-engine.js";
+import { escapeRegex } from "../lib/escape-regex.js";
 
 export interface GraphResult {
   note: string;
@@ -115,6 +116,3 @@ export async function graphCrossProjectCommand(
   return grouped;
 }
 
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}

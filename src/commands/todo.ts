@@ -2,6 +2,7 @@ import { VaultFS } from "../lib/vault-fs.js";
 import { parseFrontmatter, serializeFrontmatter, createFrontmatter, mergeFrontmatter } from "../lib/frontmatter.js";
 import { detectProject } from "../lib/project-detector.js";
 import { validateProjectSlug } from "../config.js";
+import { escapeRegex } from "../lib/escape-regex.js";
 
 export interface TodoItem {
   text: string;
@@ -57,18 +58,19 @@ export async function todoCommand(
     if (!exists) {
       const fm = createFrontmatter({ type: "todo", project: projectSlug });
       const body = `\n# Todos\n\n${line}\n`;
-      await vaultFs.write(todoPath, serializeFrontmatter(fm, body));
+      const fullContent = serializeFrontmatter(fm, body);
+      await vaultFs.write(todoPath, fullContent);
+      return { todos: parseTodos(fullContent) };
     } else {
-      await vaultFs.append(todoPath, `\n${line}`);
-      // Update timestamp
+      // Atomic read-modify-write
       const content = await vaultFs.read(todoPath);
       const { data, content: body } = parseFrontmatter(content);
+      const updatedBody = body.trimEnd() + `\n${line}\n`;
       const updated = mergeFrontmatter(data, {});
-      await vaultFs.write(todoPath, serializeFrontmatter(updated, body));
+      const fullContent = serializeFrontmatter(updated, updatedBody);
+      await vaultFs.write(todoPath, fullContent);
+      return { todos: parseTodos(fullContent) };
     }
-
-    const finalContent = await vaultFs.read(todoPath);
-    return { todos: parseTodos(finalContent) };
   }
 
   if (options.action === "complete") {
@@ -77,7 +79,7 @@ export async function todoCommand(
 
     const content = await vaultFs.read(todoPath);
     const updated = content.replace(
-      new RegExp(`- \\[ \\] (🔴 |🟡 |🟢 )?${escapeRegex(options.item)}`),
+      new RegExp(`^- \\[ \\] (🔴 |🟡 |🟢 )?${escapeRegex(options.item)}$`, "m"),
       (match) => match.replace("- [ ]", "- [x]")
     );
 
@@ -138,6 +140,3 @@ function priorityMarker(priority: string): string {
   }
 }
 
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
