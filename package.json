@@ -5,7 +5,8 @@
   "type": "module",
   "main": "dist/mcp-server.js",
   "bin": {
-    "obsidian-mcp": "dist/cli.js"
+    "obsidian-mcp": "dist/mcp-server.js",
+    "obsidian-mcp-cli": "dist/cli.js"
   },
   "exports": {
     ".": {

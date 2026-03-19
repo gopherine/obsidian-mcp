@@ -27,30 +27,33 @@ Add to your MCP client configuration (see [MCP Setup](#mcp-setup) below). No ins
 
 ```bash
 npm install -g obsidian-mcp
+obsidian-mcp-cli --help
 ```
 
 Or use directly with npx:
 ```bash
-npx obsidian-mcp --help
+npx obsidian-mcp-cli --help
 ```
+
+> **Note:** The default `obsidian-mcp` binary runs the MCP server. Use `obsidian-mcp-cli` for the CLI interface.
 
 ## Quick Start
 
 ```bash
 # Initialize a project
-obsidian-mcp init /path/to/your/project
+obsidian-mcp-cli init /path/to/your/project
 
 # Read project context
-obsidian-mcp c
+obsidian-mcp-cli c
 
 # Add a task
-obsidian-mcp t add "Implement feature X"
+obsidian-mcp-cli t add "Implement feature X"
 
 # View task board
-obsidian-mcp t b
+obsidian-mcp-cli t b
 
 # Search the vault
-obsidian-mcp s "authentication"
+obsidian-mcp-cli s "authentication"
 ```
 
 ## CLI Commands

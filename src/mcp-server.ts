@@ -78,7 +78,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const content = await readCommand({ path }, ctx);
         return { content: [{ type: "text", text: content }] };
       } catch (readErr: unknown) {
-        if (readErr instanceof VaultError && readErr.code === "FILE_NOT_FOUND") {
+        const code = readErr instanceof VaultError ? readErr.code : undefined;
+        const isDir = readErr instanceof Error && "code" in readErr && (readErr as NodeJS.ErrnoException).code === "EISDIR";
+        if (code === "FILE_NOT_FOUND" || isDir) {
           const entries = await listCommand({ path, depth: typeof depth === "number" ? depth : 1 }, ctx);
           return { content: [{ type: "text", text: JSON.stringify(entries, null, 2) }] };
         }
