@@ -217,6 +217,61 @@ describe("sessionCommand", () => {
     });
   });
 
+  describe("persist session note", () => {
+    it("creates session note when completing with project and vaultFs", async () => {
+      await mkdir(join(vaultRoot, "projects/test-project/sessions"), { recursive: true });
+
+      const { session_id } = await sessionCommand({
+        action: "register",
+        tool: "claude-code",
+        project: "test-project",
+        taskSummary: "Build feature X",
+        filesTouched: ["src/index.ts"],
+      }, ctx);
+
+      await sessionCommand({
+        action: "complete",
+        sessionId: session_id!,
+        project: "test-project",
+        outcome: "Completed successfully",
+        filesTouched: ["src/index.ts"],
+        tasksCompleted: ["task-001"],
+      }, ctx);
+
+      const files = await vaultFs.list("projects/test-project/sessions");
+      expect(files.length).toBeGreaterThanOrEqual(1);
+      const notePath = files.find((f) => f.endsWith(".md"));
+      expect(notePath).toBeDefined();
+
+      const content = await vaultFs.read(notePath!);
+      expect(content).toContain("claude-code");
+      expect(content).toContain("Completed successfully");
+      expect(content).toContain("src/index.ts");
+    });
+
+    it("extracts tool name from session ID for note heading", async () => {
+      await mkdir(join(vaultRoot, "projects/test-project/sessions"), { recursive: true });
+
+      const { session_id } = await sessionCommand({
+        action: "register",
+        tool: "my-custom-tool",
+        project: "test-project",
+      }, ctx);
+
+      await sessionCommand({
+        action: "complete",
+        sessionId: session_id!,
+        project: "test-project",
+        outcome: "Done",
+      }, ctx);
+
+      const files = await vaultFs.list("projects/test-project/sessions");
+      const notePath = files.find((f) => f.endsWith(".md"));
+      const content = await vaultFs.read(notePath!);
+      expect(content).toContain("my-custom-tool");
+    });
+  });
+
   describe("unknown action", () => {
     it("throws error for unknown action", async () => {
       await expect(

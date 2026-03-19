@@ -18,6 +18,18 @@ function createMockContext(): CommandContext {
   };
 }
 
+function createMockVaultFs(readResult?: string): any {
+  return {
+    root: "/tmp/test-vault",
+    read: vi.fn().mockResolvedValue(readResult ?? ""),
+    write: vi.fn().mockResolvedValue({ path: "test", bytes: 0 }),
+    list: vi.fn().mockResolvedValue([]),
+    exists: vi.fn().mockResolvedValue(false),
+    verifyNoSymlinkEscape: vi.fn().mockResolvedValue(undefined),
+    append: vi.fn().mockResolvedValue({ path: "test", bytes: 0 }),
+  };
+}
+
 describe("CommandRegistry", () => {
   let registry: CommandRegistry;
   let ctx: CommandContext;
@@ -184,5 +196,57 @@ describe("createRegistry", () => {
       expect(def.inputSchema, `${def.name}: missing inputSchema`).toBeDefined();
       expect(def.inputSchema, `${def.name}: inputSchema must be object`).toHaveProperty("type", "object");
     }
+  });
+
+  it("adaptArgs for vault_read passes path and coerces depth", async () => {
+    const { createRegistry } = await import("./registry.js");
+    const registry = createRegistry();
+    const vaultFs = createMockVaultFs("# Hello");
+    const ctx: CommandContext = { ...createMockContext(), vaultFs };
+
+    const result = await registry.execute("vault_read", { path: "test.md", depth: "2" }, ctx);
+    expect(result).toBe("# Hello");
+    expect(vaultFs.read).toHaveBeenCalledWith("test.md");
+  });
+
+  it("adaptArgs directly transforms snake_case for each tool", async () => {
+    const { createRegistry } = await import("./registry.js");
+    const registry = createRegistry();
+
+    const readReg = registry.get("vault_read");
+    const readArgs = readReg!.adaptArgs!({ path: "f.md", depth: 3 });
+    expect(readArgs).toEqual({ path: "f.md", depth: 3 });
+
+    const taskReg = registry.get("vault_task");
+    const taskArgs = taskReg!.adaptArgs!({ action: "add", title: "T", blocked_by: ["x"], assigned_to: "a" });
+    expect(taskArgs).toEqual({ action: "add", title: "T", blockedBy: ["x"], assignedTo: "a" });
+
+    const sessionReg = registry.get("vault_session");
+    const sessionArgs = sessionReg!.adaptArgs!({ action: "register", tool: "t", task_summary: "s", files_touched: ["a.ts"] });
+    expect(sessionArgs).toEqual({ action: "register", tool: "t", taskSummary: "s", filesTouched: ["a.ts"] });
+
+    const learnReg = registry.get("vault_learn");
+    const learnArgs = learnReg!.adaptArgs!({ action: "add", title: "L", tags: ["b"], session_id: "s1" });
+    expect(learnArgs).toEqual({ action: "add", title: "L", tags: ["b"], sessionId: "s1" });
+
+    const pruneReg = registry.get("vault_prune");
+    const pruneArgs = pruneReg!.adaptArgs!({ mode: "dry-run", sessions_days: 30, done_tasks_days: 60 });
+    expect(pruneArgs).toEqual({ mode: "dry-run", policy: { sessions: 30, doneTasks: 60 }, all: false });
+
+    const ctxReg = registry.get("vault_project_context");
+    const ctxArgs = ctxReg!.adaptArgs!({ project: "p", detail_level: "full" });
+    expect(ctxArgs).toEqual({ project: "p", detailLevel: "full" });
+
+    const writeReg = registry.get("vault_write");
+    const writeArgs = writeReg!.adaptArgs!({ path: "f.md", content: "c", mode: "append" });
+    expect(writeArgs).toEqual({ path: "f.md", content: "c", mode: "append" });
+
+    const resumeReg = registry.get("vault_resume");
+    const resumeArgs = resumeReg!.adaptArgs!({ project: "p", limit: 3, format: "json" });
+    expect(resumeArgs).toEqual({ project: "p", limit: 3 });
+
+    const searchReg = registry.get("vault_search");
+    const searchArgs = searchReg!.adaptArgs!({ query: "q", limit: 5, project: "p", path_filter: "dir" });
+    expect(searchArgs).toEqual({ query: "q", project: "p", limit: 5, structured: false });
   });
 });
