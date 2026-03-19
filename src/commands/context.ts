@@ -1,3 +1,4 @@
+import type { CommandContext } from "../core/types.js";
 import { VaultFS, VaultError } from "../lib/vault-fs.js";
 import { resolveProject } from "../config.js";
 import { estimateTokens, truncateToTokenBudget } from "../lib/token-estimator.js";
@@ -14,23 +15,21 @@ export interface ContextResult {
 }
 
 export async function contextCommand(
-  vaultFs: VaultFS,
-  vaultPath: string,
-  options: {
+  args: {
     project?: string;
     detailLevel?: "summary" | "full";
     maxTokens?: number;
-  } = {}
+  } = {} as any,
+  ctx: CommandContext,
 ): Promise<ContextResult> {
-  const { detailLevel = "summary", maxTokens = 1500 } = options;
-  const projectSlug = await resolveProject(vaultPath, options.project);
+  const { detailLevel = "summary", maxTokens } = args;
+  const effectiveMaxTokens = maxTokens ?? ctx.config.maxInjectTokens;
+  const projectSlug = await resolveProject(ctx.vaultPath, args.project);
+  const vaultFs = ctx.vaultFs;
   const contextPath = `projects/${projectSlug}/context.md`;
   const exists = await vaultFs.exists(contextPath);
 
-  // Scan learning count
   const learningCount = await countLearnings(vaultFs, projectSlug);
-
-  // Scan last session
   const lastSession = await getLastSession(vaultFs, projectSlug);
 
   if (!exists) {
@@ -47,7 +46,6 @@ export async function contextCommand(
 
   const content = await vaultFs.read(contextPath);
 
-  // Extract section headings
   const sections = content
     .split("\n")
     .filter((line) => line.startsWith("## "))
@@ -65,8 +63,7 @@ export async function contextCommand(
     };
   }
 
-  // Summary mode: truncate to token budget
-  const { text, truncated } = truncateToTokenBudget(content, maxTokens);
+  const { text, truncated } = truncateToTokenBudget(content, effectiveMaxTokens);
 
   return {
     project_slug: projectSlug,
@@ -79,7 +76,7 @@ export async function contextCommand(
   };
 }
 
-async function countLearnings(vaultFs: VaultFS, projectSlug: string): Promise<number> {
+async function countLearnings(vaultFs: import("../lib/vault-fs.js").VaultFS, projectSlug: string): Promise<number> {
   try {
     const files = await vaultFs.list(`projects/${projectSlug}/learnings`, 1);
     return files.filter((f) => f.endsWith(".md")).length;
@@ -94,7 +91,7 @@ async function countLearnings(vaultFs: VaultFS, projectSlug: string): Promise<nu
 }
 
 async function getLastSession(
-  vaultFs: VaultFS,
+  vaultFs: import("../lib/vault-fs.js").VaultFS,
   projectSlug: string
 ): Promise<{ outcome: string; completed_at: string } | null> {
   try {
@@ -103,7 +100,7 @@ async function getLastSession(
 
     if (mdFiles.length === 0) return null;
 
-    const content = await vaultFs.read(`projects/${projectSlug}/sessions/${mdFiles[0]}`);
+    const content = await vaultFs.read(mdFiles[0]);
     const { data } = parseFrontmatter(content);
 
     return {

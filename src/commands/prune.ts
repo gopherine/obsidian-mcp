@@ -1,18 +1,15 @@
+import type { CommandContext } from "../core/types.js";
 import { VaultFS } from "../lib/vault-fs.js";
 import { parseFrontmatter, mergeFrontmatter, serializeFrontmatter } from "../lib/frontmatter.js";
 import { resolveProject } from "../config.js";
 
-/**
- * Retention policies per content type. All values in days.
- * 0 = keep forever.
- */
 export interface RetentionPolicy {
-  sessions: number;        // default 30 — session notes older than this get archived
-  doneTasks: number;       // default 30 — completed/cancelled tasks get archived
-  learnings: number;       // default 0  — learnings kept forever (explicit deprecation only)
-  brainstorms: number;     // default 0  — brainstorms kept forever
-  adrs: number;            // default 0  — ADRs kept forever
-  todos: number;           // default 0  — completed todos pruned after this many days
+  sessions: number;
+  doneTasks: number;
+  learnings: number;
+  brainstorms: number;
+  adrs: number;
+  todos: number;
 }
 
 const DEFAULT_POLICY: RetentionPolicy = {
@@ -50,57 +47,44 @@ export interface VaultStats {
   oldestFile: string | null;
 }
 
-/**
- * Prune command — archive or delete stale vault content.
- *
- * Modes:
- * - "dry-run": report what would be pruned, don't touch anything
- * - "archive": move stale items to archive/ directory
- * - "delete": permanently remove stale items
- */
 export async function pruneCommand(
-  vaultFs: VaultFS,
-  vaultPath: string,
-  options: {
+  args: {
     project?: string;
     mode: "dry-run" | "archive" | "delete";
     policy?: Partial<RetentionPolicy>;
-    all?: boolean; // prune all projects
-  }
+    all?: boolean;
+  },
+  ctx: CommandContext,
 ): Promise<PruneResult[]> {
-  const policy = { ...DEFAULT_POLICY, ...options.policy };
+  const policy = { ...DEFAULT_POLICY, ...args.policy };
   const results: PruneResult[] = [];
+  const vaultFs = ctx.vaultFs;
 
-  if (options.all) {
-    // Prune all projects
+  if (args.all) {
     const projectFiles = await vaultFs.list("projects", 1);
     const projectDirs = projectFiles
       .filter((f) => f.endsWith("/") && !f.endsWith("_index.md"))
       .map((f) => f.replace("projects/", "").replace("/", ""));
 
     for (const slug of projectDirs) {
-      const result = await pruneProject(vaultFs, slug, options.mode, policy);
+      const result = await pruneProject(vaultFs, slug, args.mode, policy);
       results.push(result);
     }
   } else {
-    const projectSlug = await resolveProject(vaultPath, options.project);
-    const result = await pruneProject(vaultFs, projectSlug, options.mode, policy);
+    const projectSlug = await resolveProject(ctx.vaultPath, args.project);
+    const result = await pruneProject(vaultFs, projectSlug, args.mode, policy);
     results.push(result);
   }
 
   return results;
 }
 
-/**
- * Get vault stats for a project (useful for monitoring growth).
- */
 export async function statsCommand(
-  vaultFs: VaultFS,
-  vaultPath: string,
-  options: { project?: string }
+  args: { project?: string },
+  ctx: CommandContext,
 ): Promise<VaultStats> {
-  const projectSlug = await resolveProject(vaultPath, options.project);
-
+  const projectSlug = await resolveProject(ctx.vaultPath, args.project);
+  const vaultFs = ctx.vaultFs;
   const base = `projects/${projectSlug}`;
 
   const sessionCount = await countFiles(vaultFs, `${base}/sessions`);
@@ -108,7 +92,6 @@ export async function statsCommand(
   const adrCount = await countFiles(vaultFs, `${base}/decisions`);
   const brainstormCount = await countFiles(vaultFs, `${base}/brainstorms`);
 
-  // Task breakdown
   const taskBreakdown = { total: 0, backlog: 0, inProgress: 0, done: 0, cancelled: 0 };
   try {
     const taskFiles = await vaultFs.list(`${base}/tasks`, 1);
@@ -138,36 +121,30 @@ export async function statsCommand(
     adrs: adrCount,
     brainstorms: brainstormCount,
     totalFiles,
-    oldestFile: null, // Could scan for oldest, but expensive
+    oldestFile: null,
   };
 }
 
-/**
- * Deprecate a specific item by updating its status.
- */
 export async function deprecateCommand(
-  vaultFs: VaultFS,
-  vaultPath: string,
-  options: {
+  args: {
     path: string;
     reason?: string;
-  }
+  },
+  ctx: CommandContext,
 ): Promise<{ path: string; status: string }> {
-  const content = await vaultFs.read(options.path);
+  const content = await ctx.vaultFs.read(args.path);
   const { data, content: body } = parseFrontmatter(content);
 
   const updatedFm = mergeFrontmatter(data, { status: "deprecated" });
   let updatedBody = body;
 
-  if (options.reason) {
-    updatedBody = body.trimEnd() + `\n\n---\n**Deprecated**: ${options.reason} (${new Date().toISOString().slice(0, 10)})\n`;
+  if (args.reason) {
+    updatedBody = body.trimEnd() + `\n\n---\n**Deprecated**: ${args.reason} (${new Date().toISOString().slice(0, 10)})\n`;
   }
 
-  await vaultFs.write(options.path, serializeFrontmatter(updatedFm, updatedBody));
-  return { path: options.path, status: "deprecated" };
+  await ctx.vaultFs.write(args.path, serializeFrontmatter(updatedFm, updatedBody));
+  return { path: args.path, status: "deprecated" };
 }
-
-// ── Internal helpers ──────────────────────────────────
 
 async function pruneProject(
   vaultFs: VaultFS,
@@ -193,17 +170,14 @@ async function pruneProject(
   const base = `projects/${projectSlug}`;
   const archiveBase = `projects/${projectSlug}/_archive`;
 
-  // Prune sessions
   if (policy.sessions > 0) {
     await pruneByAge(vaultFs, `${base}/sessions`, `${archiveBase}/sessions`, policy.sessions, mode, result);
   }
 
-  // Prune done/cancelled tasks
   if (policy.doneTasks > 0) {
     await pruneByStatus(vaultFs, `${base}/tasks`, `${archiveBase}/tasks`, ["done", "cancelled"], policy.doneTasks, mode, result, "tasks_scanned");
   }
 
-  // Prune completed todos from todos.md
   if (policy.todos > 0) {
     await pruneTodos(vaultFs, `${base}/todos.md`, policy.todos, mode, result);
   }
@@ -228,7 +202,7 @@ async function pruneByAge(
   try {
     files = await vaultFs.list(dir, 1);
   } catch {
-    return; // directory doesn't exist
+    return;
   }
 
   for (const file of files) {
@@ -245,7 +219,6 @@ async function pruneByAge(
       const fileTime = new Date(dateStr).getTime();
       if (isNaN(fileTime) || fileTime > cutoff) continue;
 
-      // This file is stale
       if (mode === "dry-run") {
         result.archived.push({ from: file, to: file.replace(dir, archiveDir) });
       } else if (mode === "archive") {

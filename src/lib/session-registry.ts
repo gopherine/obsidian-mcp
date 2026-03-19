@@ -216,7 +216,7 @@ export class SessionRegistryManager {
       try {
         const lockContent = JSON.stringify({
           pid: process.pid,
-          tool: "obsidian-kb",
+          tool: "obsidian-mcp",
           timestamp: new Date().toISOString(),
         });
 

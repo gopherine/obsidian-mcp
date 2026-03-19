@@ -1,18 +1,19 @@
+import type { CommandContext } from "../core/types.js";
 import { searchText, searchStructured, type SearchResult } from "../lib/search-engine.js";
 
 export async function searchCommand(
-  vaultPath: string,
-  query: string,
-  options: {
+  args: {
+    query: string;
     project?: string;
     limit?: number;
     structured?: boolean;
-  } = {}
+  } = {} as any,
+  ctx: CommandContext,
 ): Promise<SearchResult[]> {
-  const { project, limit = 10, structured = false } = options;
+  const { query, project, limit = 10, structured = false } = args;
+  const vaultPath = ctx.vaultPath;
 
   if (structured) {
-    // Parse structured query: "type:adr project:permanu status:active"
     const filters: Record<string, string> = {};
     for (const part of query.split(/\s+/)) {
       const idx = part.indexOf(":");

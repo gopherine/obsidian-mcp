@@ -1,12 +1,28 @@
 {
-  "name": "obsidian-kb",
-  "version": "0.2.0",
+  "name": "obsidian-mcp",
+  "version": "0.1.1",
   "description": "Universal agentic knowledge base — CLI + MCP server backed by Obsidian vault",
   "type": "module",
   "main": "dist/mcp-server.js",
   "bin": {
-    "obsidian-kb": "dist/cli.js"
+    "obsidian-mcp": "dist/cli.js"
   },
+  "exports": {
+    ".": {
+      "import": "./dist/mcp-server.js",
+      "default": "./dist/mcp-server.js"
+    },
+    "./cli": {
+      "import": "./dist/cli.js",
+      "default": "./dist/cli.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -15,7 +31,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
@@ -29,16 +46,22 @@
     "vitest": "^3.0.0"
   },
   "license": "AGPL-3.0",
+  "author": "gopherine",
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/obsidian-kb.git"
+    "url": "https://github.com/gopherine/obsidian-mcp.git"
   },
   "keywords": [
     "mcp",
+    "mcp-server",
     "obsidian",
     "knowledge-base",
     "ai",
-    "cli"
+    "cli",
+    "agentic",
+    "coding-agent",
+    "claude",
+    "cursor"
   ],
   "engines": {
     "node": ">=20.0.0"

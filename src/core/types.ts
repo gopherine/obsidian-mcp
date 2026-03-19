@@ -11,8 +11,9 @@ export interface Logger {
 
 export interface CommandContext {
   vaultFs: VaultFS;
-  config: Config;
+  vaultPath: string;
   sessionRegistry: SessionRegistryManager;
+  config: Config;
   log: Logger;
 }
 
@@ -41,4 +42,10 @@ export interface MCPToolDefinition {
 export interface MCPErrorResponse {
   error: string;
   message: string;
+}
+
+export interface CommandRegistration<TArgs = unknown, TResult = unknown> {
+  handler: CommandHandler<TArgs, TResult>;
+  toolDef: MCPToolDefinition;
+  adaptArgs?: (raw: Record<string, unknown>) => TArgs;
 }

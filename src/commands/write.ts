@@ -1,4 +1,4 @@
-import { VaultFS } from "../lib/vault-fs.js";
+import type { CommandContext } from "../core/types.js";
 import {
   parseFrontmatter,
   serializeFrontmatter,
@@ -9,15 +9,16 @@ import {
 } from "../lib/frontmatter.js";
 
 export async function writeCommand(
-  vaultFs: VaultFS,
-  path: string,
-  content: string,
-  options: {
+  args: {
+    path: string;
+    content: string;
     mode?: "overwrite" | "append" | "prepend";
     frontmatter?: Partial<Frontmatter>;
-  } = {}
+  },
+  ctx: CommandContext,
 ): Promise<{ written: boolean; path: string; bytes: number }> {
-  const { mode = "append", frontmatter: fmOverrides } = options;
+  const { path, content, mode = "append", frontmatter: fmOverrides } = args;
+  const vaultFs = ctx.vaultFs;
 
   await vaultFs.verifyNoSymlinkEscape(path);
 
@@ -36,7 +37,6 @@ export async function writeCommand(
     return { written: true, ...result };
   }
 
-  // Overwrite mode
   const fm = fmOverrides
     ? createFrontmatter(fmOverrides)
     : createFrontmatter({});
@@ -52,7 +52,7 @@ export async function writeCommand(
 }
 
 async function createNewFile(
-  vaultFs: VaultFS,
+  vaultFs: import("../lib/vault-fs.js").VaultFS,
   path: string,
   content: string,
   fmOverrides?: Partial<Frontmatter>

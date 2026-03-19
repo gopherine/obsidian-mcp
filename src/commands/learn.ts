@@ -1,4 +1,4 @@
-import { VaultFS } from "../lib/vault-fs.js";
+import type { CommandContext } from "../core/types.js";
 import { parseFrontmatter, serializeFrontmatter, createFrontmatter } from "../lib/frontmatter.js";
 import { resolveProject } from "../config.js";
 import { getNextNumber, slugify } from "../lib/auto-number.js";
@@ -17,9 +17,7 @@ export interface LearningItem {
 const VALID_CONFIDENCE: Confidence[] = ["high", "medium", "low"];
 
 export async function learnCommand(
-  vaultFs: VaultFS,
-  vaultPath: string,
-  options: {
+  args: {
     action: "add" | "list";
     title?: string;
     discovery?: string;
@@ -28,30 +26,31 @@ export async function learnCommand(
     confidence?: Confidence;
     source?: string;
     sessionId?: string;
-    tag?: string; // filter for list
-  }
+    tag?: string;
+  },
+  ctx: CommandContext,
 ): Promise<{
   learning_id?: string;
   path?: string;
   learnings?: LearningItem[];
 }> {
-  const projectSlug = await resolveProject(vaultPath, options.project);
-
+  const projectSlug = await resolveProject(ctx.vaultPath, args.project);
+  const vaultFs = ctx.vaultFs;
   const learningsDir = `projects/${projectSlug}/learnings`;
 
-  switch (options.action) {
+  switch (args.action) {
     case "add": {
-      if (!options.title) throw new Error("Title required for add");
-      if (!options.discovery) throw new Error("Discovery required for add");
+      if (!args.title) throw new Error("Title required for add");
+      if (!args.discovery) throw new Error("Discovery required for add");
 
-      const confidence = options.confidence ?? "medium";
+      const confidence = args.confidence ?? "medium";
       if (!VALID_CONFIDENCE.includes(confidence)) {
         throw new Error(`Invalid confidence "${confidence}". Must be one of: ${VALID_CONFIDENCE.join(", ")}`);
       }
 
       const nextNum = await getNextNumber(vaultFs, learningsDir);
       const padded = String(nextNum).padStart(3, "0");
-      const titleSlug = slugify(options.title);
+      const titleSlug = slugify(args.title);
       const filename = `${padded}-${titleSlug}.md`;
       const filePath = `${learningsDir}/${filename}`;
       const learningId = padded;
@@ -61,12 +60,12 @@ export async function learnCommand(
         project: projectSlug,
         status: "active",
         confidence,
-        source: options.source ?? "",
-        session_id: options.sessionId ?? "",
-        tags: options.tags ?? [],
+        source: args.source ?? "",
+        session_id: args.sessionId ?? "",
+        tags: args.tags ?? [],
       });
 
-      const body = `\n# ${options.title}\n\n${options.discovery}\n`;
+      const body = `\n# ${args.title}\n\n${args.discovery}\n`;
       await vaultFs.write(filePath, serializeFrontmatter(fm, body));
 
       return { learning_id: learningId, path: filePath };
@@ -76,19 +75,19 @@ export async function learnCommand(
       const learnings = await listLearnings(vaultFs, learningsDir);
       let filtered = learnings;
 
-      if (options.tag) {
-        filtered = filtered.filter((l) => l.tags.includes(options.tag!));
+      if (args.tag) {
+        filtered = filtered.filter((l) => l.tags.includes(args.tag!));
       }
 
       return { learnings: filtered };
     }
 
     default:
-      throw new Error(`Unknown action: ${options.action}`);
+      throw new Error(`Unknown action: ${args.action}`);
   }
 }
 
-async function listLearnings(vaultFs: VaultFS, learningsDir: string): Promise<LearningItem[]> {
+async function listLearnings(vaultFs: import("../lib/vault-fs.js").VaultFS, learningsDir: string): Promise<LearningItem[]> {
   const learnings: LearningItem[] = [];
 
   let files: string[];
@@ -100,7 +99,6 @@ async function listLearnings(vaultFs: VaultFS, learningsDir: string): Promise<Le
 
   for (const file of files) {
     if (!file.endsWith(".md")) continue;
-    // list() returns paths relative to vault root, use directly
     const filePath = file;
 
     try {
@@ -109,12 +107,10 @@ async function listLearnings(vaultFs: VaultFS, learningsDir: string): Promise<Le
 
       if (data.type !== "learning") continue;
 
-      // Extract ID from filename (file is full relative path)
       const basename = file.split("/").pop() ?? file;
       const idMatch = basename.match(/^(\d+)-/);
       if (!idMatch) continue;
 
-      // Extract title from first heading
       const titleMatch = body.match(/^# (.+)$/m);
       const title = titleMatch ? titleMatch[1].trim() : file;
 

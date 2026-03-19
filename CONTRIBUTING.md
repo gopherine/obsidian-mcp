@@ -1,4 +1,4 @@
-# Contributing to obsidian-kb
+# Contributing to obsidian-mcp
 
 Thank you for your interest in contributing!
 
@@ -6,8 +6,8 @@ Thank you for your interest in contributing!
 
 ```bash
 # Clone the repo
-git clone https://github.com/user/obsidian-kb.git
-cd obsidian-kb
+git clone https://github.com/gopherine/obsidian-mcp.git
+cd obsidian-mcp
 
 # Install dependencies
 npm install
@@ -55,9 +55,8 @@ src/
 Commands are pure async functions:
 ```typescript
 export async function myCommand(
-  vaultFs: VaultFS,
-  vaultPath: string,
-  options: { ... }
+  args: { ... },
+  ctx: CommandContext
 ): Promise<{ ... }> {
   // Implementation
 }

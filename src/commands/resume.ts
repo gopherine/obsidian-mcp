@@ -1,3 +1,4 @@
+import type { CommandContext } from "../core/types.js";
 import { VaultFS } from "../lib/vault-fs.js";
 import { parseFrontmatter } from "../lib/frontmatter.js";
 import { resolveProject } from "../config.js";
@@ -17,24 +18,19 @@ export interface ResumeContext {
   suggested_next_steps: string[];
 }
 
-/**
- * Build a resume context for continuing work on a project.
- * Aggregates: recent session outcomes, active/stale sessions, incomplete tasks.
- */
 export async function resumeCommand(
-  vaultFs: VaultFS,
-  vaultPath: string,
-  registry: SessionRegistryManager,
-  options: {
+  args: {
     project?: string;
     limit?: number;
-  }
+  },
+  ctx: CommandContext,
 ): Promise<ResumeContext> {
-  const projectSlug = await resolveProject(vaultPath, options.project);
+  const vaultFs = ctx.vaultFs;
+  const registry = ctx.sessionRegistry;
+  const projectSlug = await resolveProject(ctx.vaultPath, args.project);
 
-  const limit = options.limit ?? 5;
+  const limit = args.limit ?? 5;
 
-  // Get recent completed sessions
   const lastSessions: ResumeContext["last_sessions"] = [];
   try {
     const sessionFiles = await vaultFs.list(`projects/${projectSlug}/sessions`, 1);
@@ -63,12 +59,9 @@ export async function resumeCommand(
     }
   }
 
-  // Get active and stale (interrupted) sessions
   const allSessions = await registry.listActive();
   const activeSessions = allSessions.filter((s) => s.project === projectSlug && s.status === "active");
 
-  // Stale sessions = interrupted work
-  // We need to read the full registry for stale ones since listActive filters them
   const interruptedSessions: Session[] = [];
   try {
     const regContent = await vaultFs.read("coordination/session-registry.json");
@@ -86,7 +79,6 @@ export async function resumeCommand(
     }
   }
 
-  // Build suggested next steps
   const suggestedNextSteps: string[] = [];
 
   if (interruptedSessions.length > 0) {
@@ -104,7 +96,6 @@ export async function resumeCommand(
     }
   }
 
-  // Check for in-progress tasks
   try {
     const taskFiles = await vaultFs.list(`projects/${projectSlug}/tasks`, 1);
     for (const file of taskFiles) {
@@ -138,9 +129,6 @@ export async function resumeCommand(
   };
 }
 
-/**
- * Format resume context as markdown for injection into a new session.
- */
 export function formatResumeContext(ctx: ResumeContext): string {
   const lines: string[] = [];
 

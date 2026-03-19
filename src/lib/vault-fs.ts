@@ -6,7 +6,11 @@ import { join, resolve, relative, dirname } from "path";
  * Every path is resolved against the vault root and validated.
  */
 export class VaultFS {
-  constructor(private readonly root: string) {}
+  constructor(private readonly _root: string) {}
+
+  get root(): string {
+    return this._root;
+  }
 
   /**
    * Resolve a relative vault path to an absolute path.
@@ -34,10 +38,10 @@ export class VaultFS {
       throw new VaultError("PERMISSION_DENIED", `Cannot access personal vault: ${relativePath}`);
     }
 
-    const resolved = resolve(this.root, relativePath);
+    const resolved = resolve(this._root, relativePath);
 
     // Double-check the resolved path is within vault
-    const rel = relative(this.root, resolved);
+    const rel = relative(this._root, resolved);
     if (rel.startsWith("..")) {
       throw new VaultError("PERMISSION_DENIED", `Path escapes vault: ${relativePath}`);
     }
@@ -172,7 +176,7 @@ export class VaultFS {
     }
 
     try {
-      const [realAbs, realRoot] = await Promise.all([realpath(abs), realpath(this.root)]);
+      const [realAbs, realRoot] = await Promise.all([realpath(abs), realpath(this._root)]);
       const rel = relative(realRoot, realAbs);
       if (rel.startsWith("..")) {
         throw new VaultError("PERMISSION_DENIED", `Symlink escapes vault: ${relativePath}`);

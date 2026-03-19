@@ -1,26 +1,25 @@
-import { VaultFS } from "../lib/vault-fs.js";
+import type { CommandContext } from "../core/types.js";
 import { serializeFrontmatter, createFrontmatter } from "../lib/frontmatter.js";
 import { resolveProject } from "../config.js";
 import { getNextNumber, slugify } from "../lib/auto-number.js";
 
 export async function decideCommand(
-  vaultFs: VaultFS,
-  vaultPath: string,
-  options: {
+  args: {
     title: string;
     context: string;
     decision: string;
     alternatives?: string;
     consequences?: string;
     project?: string;
-  }
+  },
+  ctx: CommandContext,
 ): Promise<{ path: string; decision_number: number }> {
-  const projectSlug = await resolveProject(vaultPath, options.project);
+  const projectSlug = await resolveProject(ctx.vaultPath, args.project);
 
   const decisionsDir = `projects/${projectSlug}/decisions`;
-  const nextNumber = await getNextNumber(vaultFs, decisionsDir);
+  const nextNumber = await getNextNumber(ctx.vaultFs, decisionsDir);
   const paddedNumber = String(nextNumber).padStart(3, "0");
-  const slug = slugify(options.title);
+  const slug = slugify(args.title);
   const filename = `${paddedNumber}-${slug}.md`;
   const filePath = `${decisionsDir}/${filename}`;
 
@@ -32,26 +31,26 @@ export async function decideCommand(
   });
 
   const body = `
-# ADR-${paddedNumber}: ${options.title}
+# ADR-${paddedNumber}: ${args.title}
 
 ## Context
 
-${options.context}
+${args.context}
 
 ## Decision
 
-${options.decision}
+${args.decision}
 
 ## Alternatives Considered
 
-${options.alternatives ?? "None documented."}
+${args.alternatives ?? "None documented."}
 
 ## Consequences
 
-${options.consequences ?? "To be evaluated."}
+${args.consequences ?? "To be evaluated."}
 `.trimStart();
 
-  await vaultFs.write(filePath, serializeFrontmatter(fm, body));
+  await ctx.vaultFs.write(filePath, serializeFrontmatter(fm, body));
 
   return { path: filePath, decision_number: nextNumber };
 }

@@ -1,10 +1,9 @@
+import type { CommandContext } from "../core/types.js";
 import { SessionRegistryManager, type Session } from "../lib/session-registry.js";
-import { VaultFS } from "../lib/vault-fs.js";
 import { serializeFrontmatter, createFrontmatter } from "../lib/frontmatter.js";
 
 export async function sessionCommand(
-  registry: SessionRegistryManager,
-  options: {
+  args: {
     action: "register" | "heartbeat" | "complete" | "list_active";
     tool?: string;
     project?: string;
@@ -14,7 +13,7 @@ export async function sessionCommand(
     outcome?: string;
     tasksCompleted?: string[];
   },
-  vaultFs?: VaultFS,
+  ctx: CommandContext,
 ): Promise<{
   session_id?: string;
   active_sessions?: Session[];
@@ -26,14 +25,17 @@ export async function sessionCommand(
   }>;
   session_note_path?: string;
 }> {
-  switch (options.action) {
+  const registry = ctx.sessionRegistry;
+  const vaultFs = ctx.vaultFs;
+
+  switch (args.action) {
     case "register": {
-      if (!options.tool) throw new Error("Tool name required for register");
+      if (!args.tool) throw new Error("Tool name required for register");
       const result = await registry.register(
-        options.tool,
-        options.project ?? null,
-        options.taskSummary ?? null,
-        options.filesTouched ?? []
+        args.tool,
+        args.project ?? null,
+        args.taskSummary ?? null,
+        args.filesTouched ?? []
       );
       return {
         session_id: result.session_id,
@@ -42,26 +44,25 @@ export async function sessionCommand(
     }
 
     case "heartbeat": {
-      if (!options.sessionId) throw new Error("Session ID required for heartbeat");
-      await registry.heartbeat(options.sessionId);
+      if (!args.sessionId) throw new Error("Session ID required for heartbeat");
+      await registry.heartbeat(args.sessionId);
       return {};
     }
 
     case "complete": {
-      if (!options.sessionId) throw new Error("Session ID required for complete");
-      await registry.complete(options.sessionId, options.taskSummary);
+      if (!args.sessionId) throw new Error("Session ID required for complete");
+      await registry.complete(args.sessionId, args.taskSummary);
 
-      // Persist session note if we have a vault and project
       let sessionNotePath: string | undefined;
-      if (vaultFs && options.project) {
+      if (args.project) {
         sessionNotePath = await persistSessionNote(vaultFs, {
-          sessionId: options.sessionId,
-          project: options.project,
-          tool: options.tool ?? extractToolFromId(options.sessionId),
-          outcome: options.outcome ?? options.taskSummary ?? "",
-          filesTouched: options.filesTouched ?? [],
-          tasksCompleted: options.tasksCompleted ?? [],
-          startedAt: new Date().toISOString(), // best effort — registry doesn't expose start time
+          sessionId: args.sessionId,
+          project: args.project,
+          tool: args.tool ?? extractToolFromId(args.sessionId),
+          outcome: args.outcome ?? args.taskSummary ?? "",
+          filesTouched: args.filesTouched ?? [],
+          tasksCompleted: args.tasksCompleted ?? [],
+          startedAt: new Date().toISOString(),
         });
       }
 
@@ -74,22 +75,20 @@ export async function sessionCommand(
     }
 
     default:
-      throw new Error(`Unknown action: ${options.action}`);
+      throw new Error(`Unknown action: ${args.action}`);
   }
 }
 
 function extractToolFromId(sessionId: string): string {
-  // Session IDs are formatted as "<tool>-<hex>"
   const parts = sessionId.split("-");
   if (parts.length >= 2) {
-    // Everything except the last part (hex) is the tool name
     return parts.slice(0, -1).join("-");
   }
   return "unknown";
 }
 
 async function persistSessionNote(
-  vaultFs: VaultFS,
+  vaultFs: import("../lib/vault-fs.js").VaultFS,
   opts: {
     sessionId: string;
     project: string;

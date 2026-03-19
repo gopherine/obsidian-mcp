@@ -1,9 +1,15 @@
-import { VaultFS } from "../lib/vault-fs.js";
+import type { CommandContext } from "../core/types.js";
 
-export async function readCommand(vaultFs: VaultFS, path: string): Promise<string> {
-  return await vaultFs.read(path);
+export async function readCommand(
+  args: { path: string },
+  ctx: CommandContext,
+): Promise<string> {
+  return await ctx.vaultFs.read(args.path);
 }
 
-export async function listCommand(vaultFs: VaultFS, path: string, depth: number): Promise<string[]> {
-  return await vaultFs.list(path, depth);
+export async function listCommand(
+  args: { path: string; depth: number },
+  ctx: CommandContext,
+): Promise<string[]> {
+  return await ctx.vaultFs.list(args.path, args.depth);
 }

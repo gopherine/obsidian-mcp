@@ -2,6 +2,7 @@
 
 import { Command } from "commander";
 import { loadConfig } from "./config.js";
+import type { Config } from "./config.js";
 import { VaultFS } from "./lib/vault-fs.js";
 import { SessionRegistryManager } from "./lib/session-registry.js";
 import { readCommand, listCommand } from "./commands/read.js";
@@ -18,30 +19,48 @@ import { taskCommand, type TaskStatus, type TaskPriority } from "./commands/task
 import { learnCommand, type Confidence } from "./commands/learn.js";
 import { pruneCommand, statsCommand, deprecateCommand, type RetentionPolicy } from "./commands/prune.js";
 import { resumeCommand, formatResumeContext } from "./commands/resume.js";
+import type { CommandContext, Logger } from "./core/types.js";
 
-let _config: ReturnType<typeof loadConfig> | null = null;
+let _config: Config | null = null;
 let _vaultFs: VaultFS | null = null;
 let _sessionRegistry: SessionRegistryManager | null = null;
 
-function getConfig() {
+function getConfig(): Config {
   if (!_config) _config = loadConfig();
   return _config;
 }
-function getVaultFs() {
+function getVaultFs(): VaultFS {
   if (!_vaultFs) _vaultFs = new VaultFS(getConfig().vaultPath);
   return _vaultFs;
 }
-function getSessionRegistry() {
+function getSessionRegistry(): SessionRegistryManager {
   if (!_sessionRegistry) _sessionRegistry = new SessionRegistryManager(getConfig().vaultPath, getConfig().sessionTtlHours);
   return _sessionRegistry;
+}
+
+const noopLog: Logger = {
+  debug() {},
+  info() {},
+  warn() {},
+  error() {},
+};
+
+function createCtx(): CommandContext {
+  return {
+    vaultFs: getVaultFs(),
+    vaultPath: getConfig().vaultPath,
+    sessionRegistry: getSessionRegistry(),
+    config: getConfig(),
+    log: noopLog,
+  };
 }
 
 const program = new Command();
 
 program
-  .name("obsidian-kb")
+  .name("obsidian-mcp")
   .description("Universal agentic knowledge base — CLI backed by Obsidian vault")
-  .version("0.2.0");
+  .version("0.1.1");
 
 // ── read ──────────────────────────────────────────────
 program
@@ -49,7 +68,7 @@ program
   .description("Read a vault note")
   .action(async (path: string) => {
     try {
-      const content = await readCommand(getVaultFs(), path);
+      const content = await readCommand({ path }, createCtx());
       process.stdout.write(content);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -69,7 +88,7 @@ program
       if (Number.isNaN(depth) || depth < 1) {
         throw new Error("--depth must be a positive integer");
       }
-      const entries = await listCommand(getVaultFs(), path, depth);
+      const entries = await listCommand({ path, depth }, createCtx());
       for (const entry of entries) {
         console.log(entry);
       }
@@ -101,10 +120,12 @@ program
           throw new Error(`Invalid JSON in --frontmatter: ${opts.frontmatter}`);
         }
       }
-      const result = await writeCommand(getVaultFs(), path, opts.content, {
+      const result = await writeCommand({
+        path,
+        content: opts.content,
         mode: opts.mode as "overwrite" | "append" | "prepend",
         frontmatter: fm,
-      });
+      }, createCtx());
       console.log(JSON.stringify(result));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -120,7 +141,7 @@ program
   .requiredOption("-c, --content <text>", "Content to append")
   .action(async (path: string, opts: { content: string }) => {
     try {
-      const result = await writeCommand(getVaultFs(), path, opts.content, { mode: "append" });
+      const result = await writeCommand({ path, content: opts.content, mode: "append" }, createCtx());
       console.log(JSON.stringify(result));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -142,11 +163,12 @@ program
       if (Number.isNaN(limit) || limit < 1) {
         throw new Error("--limit must be a positive integer");
       }
-      const results = await searchCommand(getConfig().vaultPath, query, {
+      const results = await searchCommand({
+        query,
         project: opts.project,
         limit,
         structured: opts.structured,
-      });
+      }, createCtx());
       console.log(JSON.stringify(results, null, 2));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -167,11 +189,10 @@ program
       if (!validDetails.includes(opts.detail as any)) {
         throw new Error(`--detail must be one of: ${validDetails.join(", ")}`);
       }
-      const result = await contextCommand(getVaultFs(), getConfig().vaultPath, {
+      const result = await contextCommand({
         project: opts.project,
         detailLevel: opts.detail as "summary" | "full",
-        maxTokens: getConfig().maxInjectTokens,
-      });
+      }, createCtx());
       console.log(result.context_md);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -208,14 +229,14 @@ program
   .option("-p, --project <slug>", "Project slug")
   .action(async (opts) => {
     try {
-      const result = await decideCommand(getVaultFs(), getConfig().vaultPath, {
+      const result = await decideCommand({
         title: opts.title,
         context: opts.context,
         decision: opts.decision,
         alternatives: opts.alternatives,
         consequences: opts.consequences,
         project: opts.project,
-      });
+      }, createCtx());
       console.log(JSON.stringify(result));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -236,11 +257,11 @@ todoCmd
   .option("-b, --blockers-only", "Only show high-priority blockers")
   .action(async (opts: { project?: string; blockersOnly?: boolean }) => {
     try {
-      const result = await todoCommand(getVaultFs(), getConfig().vaultPath, {
+      const result = await todoCommand({
         action: "list",
         project: opts.project,
         blockersOnly: opts.blockersOnly,
-      });
+      }, createCtx());
       for (const todo of result.todos) {
         const marker = todo.completed ? "[x]" : "[ ]";
         const priority = todo.priority === "high" ? "P0" : todo.priority === "low" ? "P2" : "P1";
@@ -264,12 +285,12 @@ todoCmd
       if (!validTodoPriorities.includes(opts.priority as any)) {
         throw new Error(`--priority must be one of: ${validTodoPriorities.join(", ")}`);
       }
-      await todoCommand(getVaultFs(), getConfig().vaultPath, {
+      await todoCommand({
         action: "add",
         item: text,
         priority: opts.priority as "high" | "medium" | "low",
         project: opts.project,
-      });
+      }, createCtx());
       console.log(`Added: ${text}`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -284,11 +305,11 @@ todoCmd
   .option("-p, --project <slug>", "Project slug")
   .action(async (text: string, opts: { project?: string }) => {
     try {
-      await todoCommand(getVaultFs(), getConfig().vaultPath, {
+      await todoCommand({
         action: "complete",
         item: text,
         project: opts.project,
-      });
+      }, createCtx());
       console.log(`Completed: ${text}`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -319,13 +340,13 @@ taskCmd
       if (opts.status && !validStatuses.includes(opts.status as any)) {
         throw new Error(`--status must be one of: ${validStatuses.join(", ")}`);
       }
-      const result = await taskCommand(getVaultFs(), getConfig().vaultPath, {
+      const result = await taskCommand({
         action: "list",
         project: opts.project,
         status: opts.status as TaskStatus | undefined,
         priority: opts.priority as TaskPriority | undefined,
         assignedTo: opts.assignedTo,
-      });
+      }, createCtx());
       if (!result.tasks?.length) {
         console.log("No tasks found.");
         return;
@@ -356,7 +377,7 @@ taskCmd
         throw new Error(`--priority must be one of: ${validPriorities.join(", ")}`);
       }
       const tags = opts.tags ? opts.tags.split(",").map((t) => t.trim()) : undefined;
-      const result = await taskCommand(getVaultFs(), getConfig().vaultPath, {
+      const result = await taskCommand({
         action: "add",
         title,
         project: opts.project,
@@ -364,7 +385,7 @@ taskCmd
         blockedBy: opts.blockedBy,
         assignedTo: opts.assignedTo,
         tags,
-      });
+      }, createCtx());
       console.log(JSON.stringify({ task_id: result.task_id, path: result.path }));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -392,7 +413,7 @@ taskCmd
       if (opts.status && !validStatuses.includes(opts.status as any)) {
         throw new Error(`--status must be one of: ${validStatuses.join(", ")}`);
       }
-      const result = await taskCommand(getVaultFs(), getConfig().vaultPath, {
+      const result = await taskCommand({
         action: "update",
         taskId,
         project: opts.project,
@@ -401,7 +422,7 @@ taskCmd
         blockedBy: opts.blockedBy,
         assignedTo: opts.assignedTo,
         title: opts.title,
-      });
+      }, createCtx());
       console.log(JSON.stringify({ task_id: result.task_id, updated_fields: result.updated_fields }));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -416,10 +437,10 @@ taskCmd
   .option("-p, --project <slug>", "Project slug")
   .action(async (opts: { project?: string }) => {
     try {
-      const result = await taskCommand(getVaultFs(), getConfig().vaultPath, {
+      const result = await taskCommand({
         action: "board",
         project: opts.project,
-      });
+      }, createCtx());
       if (!result.board) return;
 
       for (const [status, tasks] of Object.entries(result.board)) {
@@ -459,7 +480,7 @@ learnCmd
         throw new Error(`--confidence must be one of: ${validConfidences.join(", ")}`);
       }
       const tags = opts.tags ? opts.tags.split(",").map((t) => t.trim()) : undefined;
-      const result = await learnCommand(getVaultFs(), getConfig().vaultPath, {
+      const result = await learnCommand({
         action: "add",
         title: opts.title,
         discovery: opts.discovery,
@@ -467,7 +488,7 @@ learnCmd
         tags,
         confidence: opts.confidence as Confidence,
         source: opts.source,
-      });
+      }, createCtx());
       console.log(JSON.stringify({ learning_id: result.learning_id, path: result.path }));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -483,16 +504,15 @@ learnCmd
   .option("--tag <tag>", "Filter by tag")
   .action(async (opts: { project?: string; tag?: string }) => {
     try {
-      const result = await learnCommand(getVaultFs(), getConfig().vaultPath, {
+      const result = await learnCommand({
         action: "list",
         project: opts.project,
         tag: opts.tag,
-      });
+      }, createCtx());
       if (!result.learnings?.length) {
         console.log(JSON.stringify({ learnings: [] }));
         return;
       }
-      // Table format for CLI, JSON for piping
       if (process.stdout.isTTY) {
         for (const l of result.learnings) {
           const tagStr = l.tags.length > 0 ? ` (${l.tags.join(", ")})` : "";
@@ -516,11 +536,11 @@ program
   .option("-p, --project <slug>", "Project slug")
   .action(async (topic: string, opts: { content: string; project?: string }) => {
     try {
-      const result = await brainstormCommand(getVaultFs(), getConfig().vaultPath, {
+      const result = await brainstormCommand({
         topic,
         content: opts.content,
         project: opts.project,
-      });
+      }, createCtx());
       console.log(JSON.stringify(result));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -543,13 +563,13 @@ sessionCmd
   .option("--files <paths...>", "Files being touched")
   .action(async (opts: { tool: string; project?: string; task?: string; files?: string[] }) => {
     try {
-      const result = await sessionCommand(getSessionRegistry(), {
+      const result = await sessionCommand({
         action: "register",
         tool: opts.tool,
         project: opts.project,
         taskSummary: opts.task,
         filesTouched: opts.files,
-      });
+      }, createCtx());
       console.log(JSON.stringify(result, null, 2));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -563,7 +583,7 @@ sessionCmd
   .description("Update session heartbeat")
   .action(async (sessionId: string) => {
     try {
-      await sessionCommand(getSessionRegistry(), { action: "heartbeat", sessionId });
+      await sessionCommand({ action: "heartbeat", sessionId }, createCtx());
       console.log("Heartbeat updated");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -582,7 +602,7 @@ sessionCmd
   .option("-p, --project <slug>", "Project slug")
   .action(async (sessionId: string, opts: { summary?: string; outcome?: string; files?: string[]; tasks?: string[]; project?: string }) => {
     try {
-      const result = await sessionCommand(getSessionRegistry(), {
+      const result = await sessionCommand({
         action: "complete",
         sessionId,
         taskSummary: opts.summary,
@@ -590,7 +610,7 @@ sessionCmd
         filesTouched: opts.files,
         tasksCompleted: opts.tasks,
         project: opts.project,
-      }, getVaultFs());
+      }, createCtx());
       console.log("Session completed");
       if (result.session_note_path) {
         console.log(`Session note: ${result.session_note_path}`);
@@ -607,7 +627,7 @@ sessionCmd
   .description("List active sessions")
   .action(async () => {
     try {
-      const result = await sessionCommand(getSessionRegistry(), { action: "list_active" });
+      const result = await sessionCommand({ action: "list_active" }, createCtx());
       if (!result.active_sessions?.length) {
         console.log("No active sessions");
         return;
@@ -637,9 +657,7 @@ graphCmd
       if (Number.isNaN(hops) || hops < 1) {
         throw new Error("--hops must be a positive integer");
       }
-      const result = await graphRelatedCommand(getVaultFs(), getConfig().vaultPath, path, {
-        hops,
-      });
+      const result = await graphRelatedCommand({ path, hops }, createCtx());
       console.log(JSON.stringify(result, null, 2));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -658,9 +676,7 @@ graphCmd
       if (Number.isNaN(limit) || limit < 1) {
         throw new Error("--limit must be a positive integer");
       }
-      const grouped = await graphCrossProjectCommand(getConfig().vaultPath, query, {
-        limit,
-      });
+      const grouped = await graphCrossProjectCommand({ query, limit }, createCtx());
       for (const [project, results] of Object.entries(grouped)) {
         console.log(`\n${project} (${results.length} matches):`);
         for (const r of results) {
@@ -695,12 +711,12 @@ program
         doneTasks: parseInt(opts.doneTasks, 10) || 30,
         todos: parseInt(opts.todos, 10) || 0,
       };
-      const results = await pruneCommand(getVaultFs(), getConfig().vaultPath, {
+      const results = await pruneCommand({
         project: opts.project,
         mode: opts.mode as "dry-run" | "archive" | "delete",
         policy,
         all: opts.all,
-      });
+      }, createCtx());
       for (const r of results) {
         console.log(`\n=== ${r.project} ===`);
         console.log(`  Scanned: ${r.stats.sessions_scanned} sessions, ${r.stats.tasks_scanned} tasks`);
@@ -730,9 +746,7 @@ program
   .option("-p, --project <slug>", "Project slug")
   .action(async (opts: { project?: string }) => {
     try {
-      const result = await statsCommand(getVaultFs(), getConfig().vaultPath, {
-        project: opts.project,
-      });
+      const result = await statsCommand({ project: opts.project }, createCtx());
       console.log(`\n=== ${result.project} ===`);
       console.log(`  Sessions:    ${result.sessions}`);
       console.log(`  Tasks:       ${result.tasks.total} (backlog: ${result.tasks.backlog}, in-progress: ${result.tasks.inProgress}, done: ${result.tasks.done}, cancelled: ${result.tasks.cancelled})`);
@@ -754,10 +768,7 @@ program
   .option("-r, --reason <text>", "Reason for deprecation")
   .action(async (path: string, opts: { reason?: string }) => {
     try {
-      const result = await deprecateCommand(getVaultFs(), getConfig().vaultPath, {
-        path,
-        reason: opts.reason,
-      });
+      const result = await deprecateCommand({ path, reason: opts.reason }, createCtx());
       console.log(`Deprecated: ${result.path} (status: ${result.status})`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -779,10 +790,7 @@ program
       if (Number.isNaN(limit) || limit < 1) {
         throw new Error("--limit must be a positive integer");
       }
-      const result = await resumeCommand(getVaultFs(), getConfig().vaultPath, getSessionRegistry(), {
-        project: opts.project,
-        limit,
-      });
+      const result = await resumeCommand({ project: opts.project, limit }, createCtx());
       if (opts.json) {
         console.log(JSON.stringify(result, null, 2));
       } else {

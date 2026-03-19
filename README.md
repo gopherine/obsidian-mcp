@@ -1,15 +1,16 @@
-# obsidian-kb
+# obsidian-mcp
 
 **Universal Agentic Knowledge Base** — A CLI tool and MCP server backed by an Obsidian vault that serves as shared memory for AI coding tools.
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Coverage](https://img.shields.io/badge/Coverage-90%25-brightgreen.svg)](#)
+[![npm version](https://img.shields.io/npm/v/obsidian-mcp.svg)](https://www.npmjs.com/package/obsidian-mcp)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 
 ## Features
 
-- **Dual Interface** — Works as both CLI and MCP server
+- **MCP Server** — Works as an MCP server for Claude Desktop, Cursor, OpenCode, and any MCP-compatible client
+- **CLI Tool** — Full CLI interface for manual vault operations
 - **Project Auto-Discovery** — Detects projects from CWD via git root and project-map.json
 - **Knowledge Management** — Tasks, decisions (ADRs), learnings, sessions, brainstorms
 - **Full-Text Search** — Powered by ripgrep
@@ -18,35 +19,38 @@
 
 ## Installation
 
+### As an MCP Server
+
+Add to your MCP client configuration (see [MCP Setup](#mcp-setup) below). No install needed when using `npx`.
+
+### As a CLI Tool
+
 ```bash
-npm install -g obsidian-kb
+npm install -g obsidian-mcp
 ```
 
 Or use directly with npx:
 ```bash
-npx obsidian-kb --help
+npx obsidian-mcp --help
 ```
 
 ## Quick Start
 
 ```bash
 # Initialize a project
-obsidian-kb init /path/to/your/project
+obsidian-mcp init /path/to/your/project
 
 # Read project context
-obsidian-kb c
+obsidian-mcp c
 
 # Add a task
-obsidian-kb t add "Implement feature X"
+obsidian-mcp t add "Implement feature X"
 
 # View task board
-obsidian-kb t b
+obsidian-mcp t b
 
 # Search the vault
-obsidian-kb s "authentication"
-
-# Install a skill
-obsidian-kb sk i https://github.com/user/superpowers
+obsidian-mcp s "authentication"
 ```
 
 ## CLI Commands
@@ -74,14 +78,14 @@ obsidian-kb sk i https://github.com/user/superpowers
 
 ### Claude Desktop
 
-Add to your Claude config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+Add to your Claude config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, or `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
 
 ```json
 {
   "mcpServers": {
-    "obsidian-kb": {
+    "obsidian-mcp": {
       "command": "npx",
-      "args": ["obsidian-kb"],
+      "args": ["obsidian-mcp"],
       "env": {
         "VAULT_PATH": "~/Vaults/ai"
       }
@@ -97,9 +101,9 @@ Add to your `.cursor/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "obsidian-kb": {
+    "obsidian-mcp": {
       "command": "npx",
-      "args": ["-y", "obsidian-kb"]
+      "args": ["-y", "obsidian-mcp"]
     }
   }
 }
@@ -112,10 +116,10 @@ Add to your MCP configuration:
 ```json
 {
   "mcpServers": {
-    "obsidian-kb": {
+    "obsidian-mcp": {
       "type": "stdio",
       "command": "npx",
-      "args": ["obsidian-kb"]
+      "args": ["obsidian-mcp"]
     }
   }
 }

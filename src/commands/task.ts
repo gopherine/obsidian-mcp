@@ -1,4 +1,4 @@
-import { VaultFS } from "../lib/vault-fs.js";
+import type { CommandContext } from "../core/types.js";
 import { parseFrontmatter, serializeFrontmatter, createFrontmatter, mergeFrontmatter } from "../lib/frontmatter.js";
 import { resolveProject } from "../config.js";
 import { getNextNumber, slugify } from "../lib/auto-number.js";
@@ -25,9 +25,7 @@ const VALID_TASK_PRIORITIES: TaskPriority[] = ["p0", "p1", "p2"];
 const STATUS_COLUMNS: TaskStatus[] = ["backlog", "in-progress", "blocked", "done", "cancelled"];
 
 export async function taskCommand(
-  vaultFs: VaultFS,
-  vaultPath: string,
-  options: {
+  args: {
     action: "add" | "list" | "update" | "board";
     title?: string;
     taskId?: string;
@@ -38,7 +36,8 @@ export async function taskCommand(
     sprint?: string;
     tags?: string[];
     project?: string;
-  }
+  },
+  ctx: CommandContext,
 ): Promise<{
   task_id?: string;
   path?: string;
@@ -46,22 +45,22 @@ export async function taskCommand(
   tasks?: TaskItem[];
   board?: Record<string, TaskItem[]>;
 }> {
-  const projectSlug = await resolveProject(vaultPath, options.project);
-
+  const projectSlug = await resolveProject(ctx.vaultPath, args.project);
+  const vaultFs = ctx.vaultFs;
   const tasksDir = `projects/${projectSlug}/tasks`;
 
-  switch (options.action) {
+  switch (args.action) {
     case "add": {
-      if (!options.title) throw new Error("Title required for add");
+      if (!args.title) throw new Error("Title required for add");
 
       const nextNum = await getNextNumber(vaultFs, tasksDir);
       const padded = String(nextNum).padStart(3, "0");
-      const titleSlug = slugify(options.title);
+      const titleSlug = slugify(args.title);
       const taskId = `task-${padded}`;
       const filename = `${taskId}-${titleSlug}.md`;
       const filePath = `${tasksDir}/${filename}`;
 
-      const priority = options.priority ?? "p1";
+      const priority = args.priority ?? "p1";
       if (!VALID_TASK_PRIORITIES.includes(priority)) {
         throw new Error(`Invalid priority "${priority}". Must be one of: ${VALID_TASK_PRIORITIES.join(", ")}`);
       }
@@ -71,13 +70,13 @@ export async function taskCommand(
         project: projectSlug,
         status: "backlog",
         priority,
-        blocked_by: options.blockedBy ?? [],
-        assigned_to: options.assignedTo ?? "",
-        sprint: options.sprint ?? "",
-        tags: options.tags ?? [],
+        blocked_by: args.blockedBy ?? [],
+        assigned_to: args.assignedTo ?? "",
+        sprint: args.sprint ?? "",
+        tags: args.tags ?? [],
       });
 
-      const body = `\n# ${options.title}\n`;
+      const body = `\n# ${args.title}\n`;
       await vaultFs.write(filePath, serializeFrontmatter(fm, body));
 
       return { task_id: taskId, path: filePath };
@@ -87,65 +86,64 @@ export async function taskCommand(
       const tasks = await listTasks(vaultFs, tasksDir);
       let filtered = tasks;
 
-      if (options.status) {
-        filtered = filtered.filter((t) => t.status === options.status);
+      if (args.status) {
+        filtered = filtered.filter((t) => t.status === args.status);
       }
-      if (options.priority) {
-        filtered = filtered.filter((t) => t.priority === options.priority);
+      if (args.priority) {
+        filtered = filtered.filter((t) => t.priority === args.priority);
       }
-      if (options.assignedTo) {
-        filtered = filtered.filter((t) => t.assigned_to === options.assignedTo);
+      if (args.assignedTo) {
+        filtered = filtered.filter((t) => t.assigned_to === args.assignedTo);
       }
 
       return { tasks: filtered };
     }
 
     case "update": {
-      if (!options.taskId) throw new Error("Task ID required for update");
+      if (!args.taskId) throw new Error("Task ID required for update");
 
       const tasks = await listTasks(vaultFs, tasksDir);
-      const task = tasks.find((t) => t.id === options.taskId);
-      if (!task) throw new Error(`Task not found: ${options.taskId}`);
+      const task = tasks.find((t) => t.id === args.taskId);
+      if (!task) throw new Error(`Task not found: ${args.taskId}`);
 
       const content = await vaultFs.read(task.path);
       const { data, content: body } = parseFrontmatter(content);
       const updatedFields: string[] = [];
 
-      if (options.status) {
-        if (!VALID_TASK_STATUSES.includes(options.status)) {
-          throw new Error(`Invalid status "${options.status}". Must be one of: ${VALID_TASK_STATUSES.join(", ")}`);
+      if (args.status) {
+        if (!VALID_TASK_STATUSES.includes(args.status)) {
+          throw new Error(`Invalid status "${args.status}". Must be one of: ${VALID_TASK_STATUSES.join(", ")}`);
         }
-        data.status = options.status;
+        data.status = args.status;
         updatedFields.push("status");
       }
-      if (options.priority) {
-        if (!VALID_TASK_PRIORITIES.includes(options.priority)) {
-          throw new Error(`Invalid priority "${options.priority}". Must be one of: ${VALID_TASK_PRIORITIES.join(", ")}`);
+      if (args.priority) {
+        if (!VALID_TASK_PRIORITIES.includes(args.priority)) {
+          throw new Error(`Invalid priority "${args.priority}". Must be one of: ${VALID_TASK_PRIORITIES.join(", ")}`);
         }
-        data.priority = options.priority;
+        data.priority = args.priority;
         updatedFields.push("priority");
       }
-      if (options.blockedBy !== undefined) {
-        data.blocked_by = options.blockedBy;
+      if (args.blockedBy !== undefined) {
+        data.blocked_by = args.blockedBy;
         updatedFields.push("blocked_by");
       }
-      if (options.assignedTo !== undefined) {
-        data.assigned_to = options.assignedTo;
+      if (args.assignedTo !== undefined) {
+        data.assigned_to = args.assignedTo;
         updatedFields.push("assigned_to");
       }
-      if (options.title) {
-        // Update title in body
-        const newBody = body.replace(/^# .+$/m, `# ${options.title}`);
+      if (args.title) {
+        const newBody = body.replace(/^# .+$/m, `# ${args.title}`);
         const updated = mergeFrontmatter(data, {});
         await vaultFs.write(task.path, serializeFrontmatter(updated, newBody));
         updatedFields.push("title");
-        return { task_id: options.taskId, updated_fields: updatedFields };
+        return { task_id: args.taskId, updated_fields: updatedFields };
       }
 
       const updated = mergeFrontmatter(data, {});
       await vaultFs.write(task.path, serializeFrontmatter(updated, body));
 
-      return { task_id: options.taskId, updated_fields: updatedFields };
+      return { task_id: args.taskId, updated_fields: updatedFields };
     }
 
     case "board": {
@@ -160,11 +158,11 @@ export async function taskCommand(
     }
 
     default:
-      throw new Error(`Unknown action: ${options.action}`);
+      throw new Error(`Unknown action: ${args.action}`);
   }
 }
 
-async function listTasks(vaultFs: VaultFS, tasksDir: string): Promise<TaskItem[]> {
+async function listTasks(vaultFs: import("../lib/vault-fs.js").VaultFS, tasksDir: string): Promise<TaskItem[]> {
   const tasks: TaskItem[] = [];
 
   let files: string[];
@@ -176,7 +174,6 @@ async function listTasks(vaultFs: VaultFS, tasksDir: string): Promise<TaskItem[]
 
   for (const file of files) {
     if (!file.endsWith(".md")) continue;
-    // list() returns paths relative to vault root, use directly
     const filePath = file;
 
     try {
@@ -185,12 +182,10 @@ async function listTasks(vaultFs: VaultFS, tasksDir: string): Promise<TaskItem[]
 
       if (data.type !== "task") continue;
 
-      // Extract task ID from filename (file is full relative path)
       const basename = file.split("/").pop() ?? file;
       const idMatch = basename.match(/^(task-\d+)/);
       if (!idMatch) continue;
 
-      // Extract title from first heading
       const titleMatch = body.match(/^# (.+)$/m);
       const title = titleMatch ? titleMatch[1].trim() : file;
 
@@ -214,7 +209,6 @@ async function listTasks(vaultFs: VaultFS, tasksDir: string): Promise<TaskItem[]
     }
   }
 
-  // Sort by priority (p0 first) then by ID
   tasks.sort((a, b) => {
     const priOrder = VALID_TASK_PRIORITIES.indexOf(a.priority) - VALID_TASK_PRIORITIES.indexOf(b.priority);
     if (priOrder !== 0) return priOrder;
