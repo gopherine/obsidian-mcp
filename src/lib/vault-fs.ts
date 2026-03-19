@@ -69,14 +69,10 @@ export class VaultFS {
   async append(relativePath: string, content: string): Promise<{ path: string; bytes: number }> {
     const abs = this.resolve(relativePath);
     await this.verifyNoSymlinkEscape(relativePath);
-    try {
-      await appendFile(abs, content, "utf-8");
-    } catch (e: any) {
-      if (e.code === "ENOENT") {
-        throw new VaultError("FILE_NOT_FOUND", `Cannot append to non-existent file: ${relativePath}`);
-      }
-      throw e;
+    if (!(await this.exists(relativePath))) {
+      throw new VaultError("FILE_NOT_FOUND", `Cannot append to non-existent file: ${relativePath}`);
     }
+    await appendFile(abs, content, "utf-8");
     return { path: relativePath, bytes: Buffer.byteLength(content, "utf-8") };
   }
 
@@ -171,15 +167,18 @@ export class VaultFS {
   async verifyNoSymlinkEscape(relativePath: string): Promise<void> {
     const abs = this.resolve(relativePath);
 
+    if (!(await this.exists(relativePath))) {
+      return;
+    }
+
     try {
-      const real = await realpath(abs);
-      const rel = relative(this.root, real);
+      const [realAbs, realRoot] = await Promise.all([realpath(abs), realpath(this.root)]);
+      const rel = relative(realRoot, realAbs);
       if (rel.startsWith("..")) {
         throw new VaultError("PERMISSION_DENIED", `Symlink escapes vault: ${relativePath}`);
       }
     } catch (e: any) {
       if (e instanceof VaultError) throw e;
-      // ENOENT means file doesn't exist yet — OK for writes
       if (e.code === "ENOENT") return;
       throw e;
     }
