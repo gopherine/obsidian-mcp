@@ -79,6 +79,30 @@ obsidian-mcp-cli s "authentication"
 
 ## MCP Setup
 
+### Claude Code
+
+Add to your project's `CLAUDE.md` or run:
+```bash
+claude mcp add obsidian-mcp -- npx -y obsidian-mcp
+```
+
+Or add to `~/.claude.json`:
+```json
+{
+  "mcpServers": {
+    "obsidian-mcp": {
+      "command": "npx",
+      "args": ["-y", "obsidian-mcp"]
+    }
+  }
+}
+```
+
+Set your vault path:
+```bash
+claude mcp add obsidian-mcp -e VAULT_PATH=~/Vaults/ai -- npx -y obsidian-mcp
+```
+
 ### Claude Desktop
 
 Add to your Claude config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, or `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
@@ -88,7 +112,7 @@ Add to your Claude config (`~/Library/Application Support/Claude/claude_desktop_
   "mcpServers": {
     "obsidian-mcp": {
       "command": "npx",
-      "args": ["obsidian-mcp"],
+      "args": ["-y", "obsidian-mcp"],
       "env": {
         "VAULT_PATH": "~/Vaults/ai"
       }
@@ -122,7 +146,22 @@ Add to your MCP configuration:
     "obsidian-mcp": {
       "type": "stdio",
       "command": "npx",
-      "args": ["obsidian-mcp"]
+      "args": ["-y", "obsidian-mcp"]
+    }
+  }
+}
+```
+
+### OpenAI Codex
+
+Add to your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "obsidian-mcp": {
+      "command": "npx",
+      "args": ["-y", "obsidian-mcp"]
     }
   }
 }
