@@ -65,6 +65,7 @@ export class SessionRegistryManager {
     return await this.withLock(async () => {
       const registry = await this.readRegistry();
       this.cleanStale(registry);
+      this.cleanOldCompleted(registry);
 
       // Detect conflicts (use Set for O(n+m) intersection)
       const conflicts: Conflict[] = [];
@@ -117,17 +118,7 @@ export class SessionRegistryManager {
         session.completed_at = new Date().toISOString();
         if (summary) session.task_summary = summary;
       }
-      // Remove completed sessions older than 24 hours (based on completion time)
-      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-      registry.sessions = registry.sessions.filter(
-        (s) => {
-          if (s.status !== "completed") return true;
-          const ts = s.completed_at ?? s.started_at;
-          if (typeof ts !== "string") return false; // corrupt entry, purge it
-          const time = new Date(ts).getTime();
-          return !isNaN(time) && time > cutoff;
-        }
-      );
+      this.cleanOldCompleted(registry);
       await this.writeRegistry(registry);
     });
   }
@@ -143,6 +134,17 @@ export class SessionRegistryManager {
         await this.writeRegistry(registry);
       }
       return registry.sessions.filter((s) => s.status === "active");
+    });
+  }
+
+  private cleanOldCompleted(registry: SessionRegistry): void {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    registry.sessions = registry.sessions.filter((s) => {
+      if (s.status !== "completed") return true;
+      const ts = s.completed_at ?? s.started_at;
+      if (typeof ts !== "string") return false;
+      const time = new Date(ts).getTime();
+      return !isNaN(time) && time > cutoff;
     });
   }
 
@@ -207,8 +209,8 @@ export class SessionRegistryManager {
     const lockPath = resolve(this.locksDir, "session-registry.lock");
     await mkdir(this.locksDir, { recursive: true });
 
-    const maxRetries = 4;
-    const retryDelay = 500;
+    const maxRetries = 8;
+    const retryDelay = 100;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {

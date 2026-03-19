@@ -19,14 +19,9 @@ export async function safeExternalPath(rawPath: string): Promise<string> {
   const home = homedir();
   const resolved = resolve(rawPath.startsWith("~") ? rawPath.replace("~", home) : rawPath);
 
-  // Must be under home directory
+  // Must be under home directory (after resolution, this catches traversal attacks)
   if (resolved !== home && !resolved.startsWith(home + "/")) {
     throw new Error(`Path must be under home directory. Got: ${resolved}`);
-  }
-
-  // No traversal
-  if (rawPath.includes("..")) {
-    throw new Error(`Path traversal not allowed: ${rawPath}`);
   }
 
   // Verify real path doesn't escape home (symlink check)

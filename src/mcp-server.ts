@@ -64,6 +64,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["path"],
       },
+      annotations: { readOnlyHint: true },
     },
     {
       name: "vault_write",
@@ -78,6 +79,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["path", "content"],
       },
+      annotations: { destructiveHint: true },
     },
     {
       name: "vault_search",
@@ -92,6 +94,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["query"],
       },
+      annotations: { readOnlyHint: true },
     },
     {
       name: "vault_project_context",
@@ -103,6 +106,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           detail_level: { type: "string", enum: ["summary", "full"], description: "Detail level (default summary)" },
         },
       },
+      annotations: { readOnlyHint: true },
     },
     {
       name: "vault_init",
@@ -115,6 +119,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["project_path"],
       },
+      annotations: { readOnlyHint: true },
     },
     {
       name: "vault_decide",
@@ -131,6 +136,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["title", "decision"],
       },
+      annotations: { destructiveHint: true },
     },
     {
       name: "vault_task",
@@ -150,6 +156,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["action"],
       },
+      annotations: { destructiveHint: true },
     },
     {
       name: "vault_learn",
@@ -169,6 +176,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["action"],
       },
+      annotations: { destructiveHint: true },
     },
     {
       name: "vault_todo",
@@ -183,6 +191,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["action"],
       },
+      annotations: { destructiveHint: true },
     },
     {
       name: "vault_brainstorm",
@@ -196,6 +205,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["topic", "content"],
       },
+      annotations: { destructiveHint: true },
     },
     {
       name: "vault_session",
@@ -214,6 +224,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["action"],
       },
+      annotations: { destructiveHint: true, idempotentHint: true },
     },
     {
       name: "vault_prune",
@@ -228,6 +239,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           done_tasks_days: { type: "number", description: "Done task retention in days (default 30)" },
         },
       },
+      annotations: { destructiveHint: true },
     },
     {
       name: "vault_stats",
@@ -238,6 +250,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           project: { type: "string", description: "Project slug (auto-detected if omitted)" },
         },
       },
+      annotations: { readOnlyHint: true },
     },
     {
       name: "vault_resume",
@@ -250,6 +263,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           format: { type: "string", enum: ["json", "markdown"], description: "Output format (default markdown)" },
         },
       },
+      annotations: { readOnlyHint: true },
     },
     {
       name: "vault_deprecate",
@@ -262,6 +276,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         required: ["path"],
       },
+      annotations: { destructiveHint: true },
     },
   ],
 }));

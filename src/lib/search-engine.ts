@@ -112,18 +112,21 @@ export async function searchStructured(
 
   const results: SearchResult[] = [];
 
-  // Build a grep pattern from the first filter to narrow candidates
+  // Build grep patterns to narrow candidates (search for both key and value)
   // SECURITY: escape both key and value to prevent regex injection
+  // Note: We search separately because YAML arrays span multiple lines
   const firstKey = Object.keys(filters)[0];
   const firstValue = filters[firstKey];
-  const safePattern = `${escapeRegex(firstKey)}:.*${escapeRegex(firstValue)}`;
+  const keyPattern = escapeRegex(firstKey) + ":";
+  const valuePattern = escapeRegex(firstValue);
 
   let candidates: string[];
   try {
     const { stdout } = await execFileAsync("rg", [
       "--files-with-matches",
       "--type", "md",
-      safePattern,
+      "--regexp", keyPattern,
+      "--regexp", valuePattern,
       vaultPath,
     ], { timeout: 10_000, maxBuffer: 1024 * 1024 });
     candidates = stdout.trim().split("\n").filter(Boolean);

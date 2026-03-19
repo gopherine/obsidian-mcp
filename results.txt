@@ -1,0 +1,444 @@
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/safe-external-path.test.ts [ src/lib/safe-external-path.test.ts ]
+ FAIL  src/lib/safe-external-path.test.ts [ src/lib/safe-external-path.test.ts ]
+TypeError: (0 , homedir) is not a function
+TypeError: (0 , homedir) is not a function
+ ❯ src/lib/safe-external-path.test.ts:13:16
+ ❯ src/lib/safe-external-path.test.ts:13:16
+     11| describe("safeExternalPath", () => {
+     12|   let testDir: string;
+     13|   const home = homedir();
+       |                ^
+     14| 
+     15|   beforeEach(async () => {
+     11| describe("safeExternalPath", () => {
+     12|   let testDir: string;
+     13|   const home = homedir();
+       |                ^
+     14| 
+     15|   beforeEach(async () => {
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/auto-number.test.ts > auto-number > getNextNumber > returns next number after existing files
+ FAIL  src/lib/auto-number.test.ts > auto-number > getNextNumber > returns next number after existing files
+AssertionError: expected 1 to be 3 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 3[39m
+[31m+ 1[39m
+
+ ❯ src/lib/auto-number.test.ts:40:22
+AssertionError: expected 1 to be 3 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 3[39m
+[31m+ 1[39m
+
+ ❯ src/lib/auto-number.test.ts:40:22
+     38|       
+     39|       const result = await getNextNumber(vaultFs, "decisions");
+     40|       expect(result).toBe(3);
+       |                      ^
+     41|     });
+     42| 
+     38|       
+     39|       const result = await getNextNumber(vaultFs, "decisions");
+     40|       expect(result).toBe(3);
+       |                      ^
+     41|     });
+     42| 
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  src/lib/auto-number.test.ts > auto-number > getNextNumber > handles gaps in numbering
+ FAIL  src/lib/auto-number.test.ts > auto-number > getNextNumber > handles gaps in numbering
+AssertionError: expected 1 to be 6 // Object.is equality
+AssertionError: expected 1 to be 6 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 6[39m
+[31m+ 1[39m
+
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 6[39m
+[31m+ 1[39m
+
+ ❯ src/lib/auto-number.test.ts:49:22
+ ❯ src/lib/auto-number.test.ts:49:22
+     47|       
+     48|       const result = await getNextNumber(vaultFs, "tasks");
+     49|       expect(result).toBe(6);
+       |                      ^
+     50|     });
+     51| 
+     47|       
+     48|       const result = await getNextNumber(vaultFs, "tasks");
+     49|       expect(result).toBe(6);
+       |                      ^
+     50|     });
+     51| 
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  src/lib/auto-number.test.ts > auto-number > getNextNumber > ignores files without number prefix
+ FAIL  src/lib/auto-number.test.ts > auto-number > getNextNumber > ignores files without number prefix
+AssertionError: expected 1 to be 2 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 1[39m
+
+AssertionError: expected 1 to be 2 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 1[39m
+
+ ❯ src/lib/auto-number.test.ts:59:22
+ ❯ src/lib/auto-number.test.ts:59:22
+     57|       
+     58|       const result = await getNextNumber(vaultFs, "mixed");
+     59|       expect(result).toBe(2);
+       |                      ^
+     60|     });
+     61| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  src/lib/auto-number.test.ts > auto-number > getNextNumber > handles single digit numbers
+     57|       
+     58|       const result = await getNextNumber(vaultFs, "mixed");
+     59|       expect(result).toBe(2);
+       |                      ^
+     60|     });
+     61| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  src/lib/auto-number.test.ts > auto-number > getNextNumber > handles single digit numbers
+AssertionError: expected 1 to be 6 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 6[39m
+[31m+ 1[39m
+
+AssertionError: expected 1 to be 6 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 6[39m
+[31m+ 1[39m
+
+ ❯ src/lib/auto-number.test.ts:68:22
+ ❯ src/lib/auto-number.test.ts:68:22
+     66|       
+     67|       const result = await getNextNumber(vaultFs, "single");
+     68|       expect(result).toBe(6);
+       |                      ^
+     69|     });
+     70| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  src/lib/auto-number.test.ts > auto-number > getNextNumber > handles three digit numbers
+     66|       
+     67|       const result = await getNextNumber(vaultFs, "single");
+     68|       expect(result).toBe(6);
+       |                      ^
+     69|     });
+     70| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  src/lib/auto-number.test.ts > auto-number > getNextNumber > handles three digit numbers
+AssertionError: expected 1 to be 101 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 101[39m
+[31m+ 1[39m
+
+ ❯ src/lib/auto-number.test.ts:77:22
+AssertionError: expected 1 to be 101 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 101[39m
+[31m+ 1[39m
+
+ ❯ src/lib/auto-number.test.ts:77:22
+     75|       
+     76|       const result = await getNextNumber(vaultFs, "triple");
+     77|       expect(result).toBe(101);
+       |                      ^
+     78|     });
+     79|   });
+     75|       
+     76|       const result = await getNextNumber(vaultFs, "triple");
+     77|       expect(result).toBe(101);
+       |                      ^
+     78|     });
+     79|   });
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+ FAIL  src/lib/auto-number.test.ts > auto-number > slugify > underscore preserved
+ FAIL  src/lib/auto-number.test.ts > auto-number > slugify > underscore preserved
+AssertionError: expected 'hello-world' to be 'hello_world' // Object.is equality
+
+Expected: [32m"hello[7m_[27mworld"[39m
+Received: [31m"hello[7m-[27mworld"[39m
+
+AssertionError: expected 'hello-world' to be 'hello_world' // Object.is equality
+
+Expected: [32m"hello[7m_[27mworld"[39m
+Received: [31m"hello[7m-[27mworld"[39m
+
+ ❯ src/lib/auto-number.test.ts:100:34
+ ❯ src/lib/auto-number.test.ts:100:34
+     98|     for (const c of cases) {
+     99|       it(c.name, () => {
+    100|         expect(slugify(c.input)).toBe(c.expected);
+       |                                  ^
+    101|       });
+    102|     }
+
+     98|     for (const c of cases) {
+     99|       it(c.name, () => {
+    100|         expect(slugify(c.input)).toBe(c.expected);
+       |                                  ^
+    101|       });
+    102|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+ FAIL  src/lib/search-engine.test.ts > search-engine > searchStructured > filters by array field value
+ FAIL  src/lib/search-engine.test.ts > search-engine > searchStructured > filters by array field value
+AssertionError: expected +0 to be 1 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+AssertionError: expected +0 to be 1 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+ ❯ src/lib/search-engine.test.ts:112:30
+ ❯ src/lib/search-engine.test.ts:112:30
+    110|     it("filters by array field value", async () => {
+    111|       const results = await searchStructured(vaultRoot, { tags: "urgen…
+    112|       expect(results.length).toBe(1);
+       |                              ^
+    113|       expect(results[0].path).toBe("task1.md");
+    114|     });
+
+    110|     it("filters by array field value", async () => {
+    111|       const results = await searchStructured(vaultRoot, { tags: "urgen…
+    112|       expect(results.length).toBe(1);
+       |                              ^
+    113|       expect(results[0].path).toBe("task1.md");
+    114|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+ FAIL  src/lib/session-registry.test.ts > SessionRegistryManager > complete > removes old completed sessions
+ FAIL  src/lib/session-registry.test.ts > SessionRegistryManager > complete > removes old completed sessions
+AssertionError: expected { id: 'claude-code-4a8f2111', …(8) } to be undefined
+
+[32m- Expected:[39m 
+undefined
+
+[31m+ Received:[39m 
+{
+  "completed_at": "2026-03-18T04:28:09.317Z",
+  "files_touched": [],
+  "id": "claude-code-4a8f2111",
+  "last_heartbeat": "2026-03-19T05:28:09.313Z",
+  "project": "proj",
+  "started_at": "2026-03-19T05:28:09.313Z",
+  "status": "completed",
+  "task_summary": null,
+  "tool": "claude-code",
+}
+
+AssertionError: expected { id: 'claude-code-4a8f2111', …(8) } to be undefined
+
+[32m- Expected:[39m 
+undefined
+
+[31m+ Received:[39m 
+{
+  "completed_at": "2026-03-18T04:28:09.317Z",
+  "files_touched": [],
+  "id": "claude-code-4a8f2111",
+  "last_heartbeat": "2026-03-19T05:28:09.313Z",
+  "project": "proj",
+  "started_at": "2026-03-19T05:28:09.313Z",
+  "status": "completed",
+  "task_summary": null,
+  "tool": "claude-code",
+}
+
+ ❯ src/lib/session-registry.test.ts:150:69
+ ❯ src/lib/session-registry.test.ts:150:69
+    148|       parsed = JSON.parse(raw);
+    149|       
+    150|       expect(parsed.sessions.find((s: any) => s.id === session_id)).to…
+       |                                                                     ^
+    151|     });
+    152|   });
+
+    148|       parsed = JSON.parse(raw);
+    149|       
+    150|       expect(parsed.sessions.find((s: any) => s.id === session_id)).to…
+       |                                                                     ^
+    151|     });
+    152|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+ FAIL  src/lib/session-registry.test.ts > SessionRegistryManager > withLock > prevents concurrent access
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+ FAIL  src/lib/session-registry.test.ts > SessionRegistryManager > withLock > prevents concurrent access
+Error: Failed to acquire lock after retries
+ ❯ SessionRegistryManager.withLock src/lib/session-registry.ts:270:11
+Error: Failed to acquire lock after retries
+ ❯ SessionRegistryManager.withLock src/lib/session-registry.ts:270:11
+    268|     }
+    269| 
+    270|     throw new Error("Failed to acquire lock after retries");
+       |           ^
+    271|   }
+    272| }
+    268|     }
+    269| 
+    270|     throw new Error("Failed to acquire lock after retries");
+       |           ^
+    271|   }
+    272| }
+ ❯ SessionRegistryManager.register src/lib/session-registry.ts:65:12
+ ❯ SessionRegistryManager.register src/lib/session-registry.ts:65:12
+ ❯ src/lib/session-registry.test.ts:195:23
+
+ ❯ src/lib/session-registry.test.ts:195:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/12]⎯
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/12]⎯
+
+ FAIL  src/lib/session-registry.test.ts > SessionRegistryManager > readRegistry validation > handles malformed session entries
+ FAIL  src/lib/session-registry.test.ts > SessionRegistryManager > readRegistry validation > handles malformed session entries
+AssertionError: expected [] to include 'valid-1'
+AssertionError: expected [] to include 'valid-1'
+ ❯ src/lib/session-registry.test.ts:238:24
+ ❯ src/lib/session-registry.test.ts:238:24
+    236|       
+    237|       const validIds = active.map(s => s.id);
+    238|       expect(validIds).toContain("valid-1");
+       |                        ^
+    239|       expect(validIds).not.toContain("valid-2");
+    240|     });
+
+    236|       
+    237|       const validIds = active.map(s => s.id);
+    238|       expect(validIds).toContain("valid-1");
+       |                        ^
+    239|       expect(validIds).not.toContain("valid-2");
+    240|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/12]⎯
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/12]⎯
+
+ FAIL  src/lib/token-estimator.test.ts > truncateToTokenBudget > truncates at section boundary when possible
+ FAIL  src/lib/token-estimator.test.ts > truncateToTokenBudget > truncates at section boundary when possible
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ src/lib/token-estimator.test.ts:33:30
+ ❯ src/lib/token-estimator.test.ts:33:30
+     31|     const text = "Intro content\n\n## Section 1\nContent 1\n\n## Secti…
+     32|     const result = truncateToTokenBudget(text, 50);
+     33|     expect(result.truncated).toBe(true);
+       |                              ^
+     34|     expect(result.text).toContain("Intro content");
+     35|     expect(result.text).not.toContain("Section 2");
+
+     31|     const text = "Intro content\n\n## Section 1\nContent 1\n\n## Secti…
+     32|     const result = truncateToTokenBudget(text, 50);
+     33|     expect(result.truncated).toBe(true);
+       |                              ^
+     34|     expect(result.text).toContain("Intro content");
+     35|     expect(result.text).not.toContain("Section 2");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/12]⎯
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/12]⎯
+
