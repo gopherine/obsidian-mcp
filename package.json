@@ -1,5 +1,5 @@
 {
-  "name": "obsidian-mcp",
+  "name": "@gopherine/obsidian-mcp",
   "version": "0.1.1",
   "description": "Universal agentic knowledge base — CLI + MCP server backed by Obsidian vault",
   "type": "module",
@@ -62,7 +62,9 @@
     "agentic",
     "coding-agent",
     "claude",
-    "cursor"
+    "cursor",
+    "opencode",
+    "codex"
   ],
   "engines": {
     "node": ">=20.0.0"

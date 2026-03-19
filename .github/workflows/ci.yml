@@ -27,7 +27,9 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+      - run: sudo apt-get install -y ripgrep
       - run: npm ci
+      - run: npm run build
       - run: npm run test:coverage
       - uses: codecov/codecov-action@v4
         with:

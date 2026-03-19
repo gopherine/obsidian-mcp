@@ -93,7 +93,10 @@ export async function searchText(
 
     return results;
   } catch (e: any) {
-    // rg exits with code 1 when no matches found
+    if (e.code === "ENOENT" && (e.message as string).includes("rg")) {
+      console.error("[search] ripgrep (rg) not found. Install it or search will be unavailable.");
+      throw new Error("ripgrep (rg) is required for text search. Install it: https://github.com/BurntSushi/ripgrep");
+    }
     if (e.code === 1 || e.status === 1) return [];
     throw e;
   }
@@ -131,6 +134,9 @@ export async function searchStructured(
     ], { timeout: 10_000, maxBuffer: 1024 * 1024 });
     candidates = stdout.trim().split("\n").filter(Boolean);
   } catch (e: any) {
+    if (e.code === "ENOENT" && (e.message as string).includes("rg")) {
+      throw new Error("ripgrep (rg) is required for structured search. Install it: https://github.com/BurntSushi/ripgrep");
+    }
     if (e.code === 1 || e.status === 1) return [];
     throw e;
   }

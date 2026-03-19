@@ -3,9 +3,9 @@
 **Universal Agentic Knowledge Base** — A CLI tool and MCP server backed by an Obsidian vault that serves as shared memory for AI coding tools.
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![npm version](https://img.shields.io/npm/v/obsidian-mcp.svg)](https://www.npmjs.com/package/obsidian-mcp)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![Release](https://img.shields.io/github/v/release/gopherine/obsidian-mcp)](https://github.com/gopherine/obsidian-mcp/releases)
 
 ## Features
 
@@ -19,41 +19,32 @@
 
 ## Installation
 
-### As an MCP Server
-
-Add to your MCP client configuration (see [MCP Setup](#mcp-setup) below). No install needed when using `npx`.
-
-### As a CLI Tool
-
 ```bash
-npm install -g obsidian-mcp
-obsidian-mcp-cli --help
+npm install -g @gopherine/obsidian-mcp
 ```
 
-Or use directly with npx:
+Or use directly with npx (no install needed):
 ```bash
-npx obsidian-mcp-cli --help
+npx @gopherine/obsidian-mcp
 ```
 
-> **Note:** The default `obsidian-mcp` binary runs the MCP server. Use `obsidian-mcp-cli` for the CLI interface.
+Or clone and build:
+```bash
+git clone https://github.com/gopherine/obsidian-mcp.git
+cd obsidian-mcp
+npm install && npm run build
+```
+
+> **Note:** The default binary runs the MCP server. The CLI is available as `obsidian-mcp-cli`.
 
 ## Quick Start
 
 ```bash
-# Initialize a project
-obsidian-mcp-cli init /path/to/your/project
+# MCP server (add to your MCP client config — see below)
+npx @gopherine/obsidian-mcp
 
-# Read project context
-obsidian-mcp-cli c
-
-# Add a task
-obsidian-mcp-cli t add "Implement feature X"
-
-# View task board
-obsidian-mcp-cli t b
-
-# Search the vault
-obsidian-mcp-cli s "authentication"
+# CLI tool
+npx @gopherine/obsidian-mcp-cli --help
 ```
 
 ## CLI Commands
@@ -83,7 +74,7 @@ obsidian-mcp-cli s "authentication"
 
 Add to your project's `CLAUDE.md` or run:
 ```bash
-claude mcp add obsidian-mcp -- npx -y obsidian-mcp
+claude mcp add obsidian-mcp -- npx -y @gopherine/obsidian-mcp
 ```
 
 Or add to `~/.claude.json`:
@@ -92,7 +83,7 @@ Or add to `~/.claude.json`:
   "mcpServers": {
     "obsidian-mcp": {
       "command": "npx",
-      "args": ["-y", "obsidian-mcp"]
+      "args": ["-y", "@gopherine/obsidian-mcp"]
     }
   }
 }
@@ -100,7 +91,7 @@ Or add to `~/.claude.json`:
 
 Set your vault path:
 ```bash
-claude mcp add obsidian-mcp -e VAULT_PATH=~/Vaults/ai -- npx -y obsidian-mcp
+claude mcp add obsidian-mcp -e VAULT_PATH=~/Vaults/ai -- npx -y @gopherine/obsidian-mcp
 ```
 
 ### Claude Desktop
@@ -112,7 +103,7 @@ Add to your Claude config (`~/Library/Application Support/Claude/claude_desktop_
   "mcpServers": {
     "obsidian-mcp": {
       "command": "npx",
-      "args": ["-y", "obsidian-mcp"],
+      "args": ["-y", "@gopherine/obsidian-mcp"],
       "env": {
         "VAULT_PATH": "~/Vaults/ai"
       }
@@ -130,7 +121,7 @@ Add to your `.cursor/mcp.json`:
   "mcpServers": {
     "obsidian-mcp": {
       "command": "npx",
-      "args": ["-y", "obsidian-mcp"]
+      "args": ["-y", "@gopherine/obsidian-mcp"]
     }
   }
 }
@@ -146,7 +137,7 @@ Add to your MCP configuration:
     "obsidian-mcp": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "obsidian-mcp"]
+      "args": ["-y", "@gopherine/obsidian-mcp"]
     }
   }
 }
@@ -161,7 +152,7 @@ Add to your MCP configuration:
   "mcpServers": {
     "obsidian-mcp": {
       "command": "npx",
-      "args": ["-y", "obsidian-mcp"]
+      "args": ["-y", "@gopherine/obsidian-mcp"]
     }
   }
 }
