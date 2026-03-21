@@ -18,6 +18,9 @@ export default defineConfig({
         'src/commands/prune.ts',
         'src/core/types.ts',
         'src/core/middleware/index.ts',
+        'src/setup/index.ts',
+        'src/setup/postinstall.ts',
+        'src/setup/preuninstall.ts',
       ],
       thresholds: {
         lines: 90,
