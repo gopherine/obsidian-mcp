@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
 import {
   writeMarkdownInstruction,
   removeMarkdownInstruction,
@@ -18,7 +18,6 @@ vi.mock("fs", () => ({
 const mockRead = vi.mocked(readFileSync);
 const mockWrite = vi.mocked(writeFileSync);
 const mockExists = vi.mocked(existsSync);
-const mockMkdir = vi.mocked(mkdirSync);
 const mockUnlink = vi.mocked(unlinkSync);
 
 beforeEach(() => vi.resetAllMocks());
