@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { dirname } from "path";
 import type { DetectedClient, SetupResult } from "./types.js";
 import { INSTRUCTION_TEXT } from "./types.js";
-import { readJsonConfig, writeJsonConfig, addMcpEntry } from "./json-config.js";
+import { readJsonConfig, writeJsonConfig, addMcpEntry, removeMcpEntry } from "./json-config.js";
 import { insertTomlBlock } from "./toml-config.js";
 import {
   writeMarkdownInstruction,
@@ -51,6 +51,22 @@ export function configureClient(
   };
 
   try {
+    // 0. Migrate: remove old obsidian-mcp / obsidian-kb entries
+    const LEGACY_NAMES = ["obsidian-mcp", "obsidian-kb"];
+    if (!options.dryRun && config.configFormat === "json" && existsSync(mcpConfigPath)) {
+      try {
+        let migrated = readJsonConfig(mcpConfigPath);
+        if (migrated) {
+          let anyLegacyRemoved = false;
+          for (const oldName of LEGACY_NAMES) {
+            const result = removeMcpEntry(migrated, config.rootKey, oldName);
+            if (result?.removed) { migrated = result.config; anyLegacyRemoved = true; }
+          }
+          if (anyLegacyRemoved) writeJsonConfig(mcpConfigPath, migrated);
+        }
+      } catch { /* migration is best-effort */ }
+    }
+
     // 1. Configure MCP entry
     if (config.configFormat === "json") {
       if (options.dryRun) {

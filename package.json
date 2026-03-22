@@ -1,6 +1,6 @@
 {
   "name": "superskill",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Universal agentic knowledge base + context optimizer + skill marketplace for AI tools",
   "type": "module",
   "main": "dist/mcp-server.js",
@@ -20,8 +20,14 @@
   },
   "files": [
     "dist/",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.test.js.map",
+    ".claude-plugin/",
+    ".mcp.json",
     "README.md",
     "LICENSE",
+    "LICENSE-COMMERCIAL.md",
     "CHANGELOG.md"
   ],
   "scripts": {

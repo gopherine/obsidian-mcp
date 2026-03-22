@@ -1,6 +1,5 @@
 node_modules/
 dist/
-*.js.map
 .worktrees
 coverage/
 .DS_Store

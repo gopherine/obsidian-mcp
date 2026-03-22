@@ -19,20 +19,21 @@ export function teardownClient(
   };
 
   try {
-    // 1. Remove MCP entry
+    // 1. Remove MCP entry (current name + legacy names)
+    const MCP_NAMES = ["superskill", "obsidian-mcp", "obsidian-kb"];
     if (config.configFormat === "json") {
       if (options.dryRun) {
         result.mcpRemoved = true;
       } else if (existsSync(mcpConfigPath)) {
-        const existing = readJsonConfig(mcpConfigPath);
+        let existing = readJsonConfig(mcpConfigPath);
         if (existing) {
-          const { config: updated, removed } = removeMcpEntry(
-            existing,
-            config.rootKey,
-            "superskill"
-          );
-          if (removed) {
-            writeJsonConfig(mcpConfigPath, updated);
+          let anyRemoved = false;
+          for (const name of MCP_NAMES) {
+            const { config: updated, removed } = removeMcpEntry(existing, config.rootKey, name);
+            if (removed) { existing = updated; anyRemoved = true; }
+          }
+          if (anyRemoved) {
+            writeJsonConfig(mcpConfigPath, existing);
             result.mcpRemoved = true;
           }
         }
