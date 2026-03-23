@@ -21,7 +21,7 @@ describe("matchTaskToDomains", () => {
   });
 
   it("matches go domain for Go tasks", () => {
-    expect(matchTaskToDomains("write tests for my Go API")).toContain("go");
+    expect(matchTaskToDomains("write tests for my golang API")).toContain("go");
   });
 
   it("matches python domain for Python tasks", () => {
@@ -79,7 +79,7 @@ describe("matchTaskToDomains", () => {
 
   // Multi-domain matching
   it("matches multiple domains from one task", () => {
-    const result = matchTaskToDomains("write tests for my Go API");
+    const result = matchTaskToDomains("write tests for my golang API");
     expect(result).toContain("tdd");
     expect(result).toContain("go");
   });
@@ -87,6 +87,27 @@ describe("matchTaskToDomains", () => {
   // No match returns empty
   it("returns empty for unrelated tasks", () => {
     expect(matchTaskToDomains("hello world")).toEqual([]);
+  });
+
+  // False positive guards — broad patterns must not over-trigger
+  it("does not match go domain for 'let's go ahead and deploy'", () => {
+    expect(matchTaskToDomains("let's go ahead and deploy")).not.toContain("go");
+  });
+
+  it("does not match go domain for 'go review this PR'", () => {
+    expect(matchTaskToDomains("go review this PR")).not.toContain("go");
+  });
+
+  it("does not match agent-engineering for 'evaluate this design'", () => {
+    expect(matchTaskToDomains("evaluate this design")).not.toContain("agent-engineering");
+  });
+
+  it("does not match database for 'query the API parameters'", () => {
+    expect(matchTaskToDomains("query the API parameters")).not.toContain("database");
+  });
+
+  it("does not match shipping for 'membership relationship'", () => {
+    expect(matchTaskToDomains("check the membership relationship")).not.toContain("shipping");
   });
 });
 

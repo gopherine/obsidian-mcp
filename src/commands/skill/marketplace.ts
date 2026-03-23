@@ -513,13 +513,13 @@ const TASK_DOMAIN_MAP: Array<{ patterns: RegExp[]; domains: string[] }> = [
   { patterns: [/plan/i, /architect/i, /design.*system/i, /implementation plan/i, /roadmap/i], domains: ["planning"] },
   { patterns: [/debug/i, /investigate/i, /fix.*bug/i, /troubleshoot/i, /error/i, /broken/i], domains: ["debugging"] },
   { patterns: [/secur/i, /vulnerab/i, /owasp/i, /auth.*review/i, /pentest/i, /hardening/i], domains: ["security"] },
-  { patterns: [/deploy/i, /ship/i, /release/i, /ci.?cd/i, /rollback/i, /production/i], domains: ["shipping"] },
+  { patterns: [/deploy/i, /\bship\b/i, /release/i, /ci.?cd/i, /rollback/i, /production/i], domains: ["shipping"] },
   { patterns: [/verify/i, /validate/i, /check.*build/i, /lint/i, /type.?check/i], domains: ["verification"] },
   { patterns: [/frontend/i, /ui\b/i, /ux\b/i, /component/i, /design.*page/i, /css/i, /tailwind/i, /layout/i], domains: ["frontend-design"] },
   { patterns: [/agent/i, /orchestrat/i, /subagent/i, /parallel.*agent/i, /multi.*agent/i], domains: ["agent-orchestration"] },
-  { patterns: [/database/i, /sql\b/i, /schema/i, /migration/i, /query/i, /postgres/i, /mysql/i, /supabase/i], domains: ["database"] },
+  { patterns: [/database/i, /sql\b/i, /schema/i, /migration/i, /postgres/i, /mysql/i, /supabase/i, /sql.*query/i, /db.*query/i], domains: ["database"] },
   // Language and framework domains
-  { patterns: [/\bgo\b/i, /golang/i, /go test/i, /goroutine/i, /go mod/i], domains: ["go"] },
+  { patterns: [/golang/i, /go test/i, /goroutine/i, /go mod/i, /go func/i, /go package/i], domains: ["go"] },
   { patterns: [/python/i, /pytest/i, /pip/i, /django/i, /flask/i, /fastapi/i], domains: ["python"] },
   { patterns: [/django/i, /drf\b/i, /django rest/i], domains: ["django"] },
   { patterns: [/spring/i, /spring boot/i, /java\b/i, /jpa\b/i, /hibernate/i, /maven/i, /gradle/i], domains: ["spring-boot", "java"] },
@@ -540,7 +540,9 @@ const TASK_DOMAIN_MAP: Array<{ patterns: RegExp[]; domains: string[] }> = [
   // 3D and animation
   { patterns: [/three\.?js/i, /webgl/i, /3d\b/i, /animation/i, /gsap/i, /framer/i], domains: ["3d-animation"] },
   // Agent engineering
-  { patterns: [/agent.*harness/i, /eval/i, /cost.*optim/i, /agent.*loop/i, /agent.*engineer/i], domains: ["agent-engineering"] },
+  { patterns: [/agent.*harness/i, /agent.*eval/i, /cost.*optim/i, /agent.*loop/i, /agent.*engineer/i, /eval.*pipeline/i], domains: ["agent-engineering"] },
+  // Meta / tooling
+  { patterns: [/skill.*manage/i, /compaction/i, /skill.*install/i, /learning.*capture/i], domains: ["meta"] },
 ];
 
 export function matchTaskToDomains(task: string): string[] {
@@ -617,11 +619,13 @@ export async function activateSkills(options: {
     winnerMap.set(r.domain, r.chosen);
   }
 
-  // For each matched domain, load all skills — collision winners first, then the rest
+  // For each matched domain, load collision winner + up to 2 alternatives (max 3 per domain)
+  const MAX_SKILLS_PER_DOMAIN = 3;
   const skillsToLoad: CatalogSkill[] = [];
   const seenIds = new Set<string>();
 
   for (const domain of matchedDomains) {
+    let domainCount = 0;
     // Collision winner goes first if present
     const winnerId = winnerMap.get(domain);
     if (winnerId && !seenIds.has(winnerId)) {
@@ -629,13 +633,16 @@ export async function activateSkills(options: {
       if (entry) {
         skillsToLoad.push(entry);
         seenIds.add(winnerId);
+        domainCount++;
       }
     }
-    // Then all other skills in this domain
+    // Then other skills in this domain, up to the cap
     for (const skill of CATALOG) {
+      if (domainCount >= MAX_SKILLS_PER_DOMAIN) break;
       if (skill.domains.includes(domain) && !seenIds.has(skill.id)) {
         skillsToLoad.push(skill);
         seenIds.add(skill.id);
+        domainCount++;
       }
     }
   }
