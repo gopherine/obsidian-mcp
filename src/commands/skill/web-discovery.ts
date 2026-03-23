@@ -5,6 +5,36 @@
  * Called as a fallback when activateSkills() finds zero matches.
  */
 
+import { homedir } from "os";
+import { join } from "path";
+import { readFile, writeFile, rename, mkdir } from "fs/promises";
+
+// ── Cache Types ──────────────────────────────────────
+
+export interface DiscoveryCacheEntry {
+  results: DiscoveredSkill[];
+  timestamp: string;
+  ttl_hours: number;
+}
+
+export interface DiscoveryCache {
+  entries: Record<string, DiscoveryCacheEntry>;
+}
+
+const CACHE_DIR = join(homedir(), ".superskill");
+const CACHE_FILE = join(CACHE_DIR, "discovery-cache.json");
+const DEFAULT_TTL_HOURS = 24;
+const MAX_CACHE_ENTRIES = 100;
+
+/** Visible for testing — override cache file path. */
+export let _cacheFilePath = CACHE_FILE;
+export function _setCacheFilePath(p: string): void {
+  _cacheFilePath = p;
+}
+export function _resetCacheFilePath(): void {
+  _cacheFilePath = CACHE_FILE;
+}
+
 export interface DiscoveredSkill {
   name: string;
   description: string;
@@ -21,15 +51,95 @@ export interface WebDiscoveryResult {
   error?: string;
 }
 
+// ── Cache Helpers ────────────────────────────────────
+
+/**
+ * Normalize a task string into a stable cache key.
+ * Lowercase, extract keywords, sort alphabetically, join with "+".
+ */
+export function normalizeCacheKey(task: string): string {
+  const kw = extractKeywords(task);
+  return kw.sort().join("+");
+}
+
+async function readCache(): Promise<DiscoveryCache> {
+  try {
+    const raw = await readFile(_cacheFilePath, "utf-8");
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && parsed.entries && typeof parsed.entries === "object") {
+      return parsed as DiscoveryCache;
+    }
+    return { entries: {} };
+  } catch {
+    return { entries: {} };
+  }
+}
+
+async function writeCache(cache: DiscoveryCache): Promise<void> {
+  try {
+    const dir = _cacheFilePath.substring(0, _cacheFilePath.lastIndexOf("/"));
+    await mkdir(dir, { recursive: true });
+    const tmp = _cacheFilePath + ".tmp." + process.pid;
+    await writeFile(tmp, JSON.stringify(cache, null, 2), "utf-8");
+    await rename(tmp, _cacheFilePath);
+  } catch {
+    // Never crash on cache write failure
+  }
+}
+
+function isCacheEntryValid(entry: DiscoveryCacheEntry): boolean {
+  const age = Date.now() - new Date(entry.timestamp).getTime();
+  const ttlMs = (entry.ttl_hours || DEFAULT_TTL_HOURS) * 60 * 60 * 1000;
+  return age < ttlMs;
+}
+
+function evictOldest(cache: DiscoveryCache): void {
+  const keys = Object.keys(cache.entries);
+  if (keys.length <= MAX_CACHE_ENTRIES) return;
+
+  // Sort by timestamp ascending (oldest first), evict extras
+  const sorted = keys.sort((a, b) => {
+    const ta = new Date(cache.entries[a].timestamp).getTime();
+    const tb = new Date(cache.entries[b].timestamp).getTime();
+    return ta - tb;
+  });
+
+  const toRemove = sorted.slice(0, keys.length - MAX_CACHE_ENTRIES);
+  for (const key of toRemove) {
+    delete cache.entries[key];
+  }
+}
+
+/**
+ * Clear the discovery cache. Exported for testing.
+ */
+export async function clearDiscoveryCache(): Promise<void> {
+  await writeCache({ entries: {} });
+}
+
 /**
  * Search GitHub for SKILL.md files matching a task description.
  * Uses the GitHub Search API (code search + repo search).
  * Unauthenticated: 10 req/min. With GITHUB_TOKEN: 30 req/min.
+ *
+ * Results are cached for 24 hours at ~/.superskill/discovery-cache.json
+ * to avoid hitting GitHub API rate limits.
  */
 export async function searchGitHubForSkills(task: string): Promise<WebDiscoveryResult> {
   const keywords = extractKeywords(task);
   if (keywords.length === 0) {
     return { success: false, results: [], error: "Could not extract search keywords from task" };
+  }
+
+  const cacheKey = normalizeCacheKey(task);
+
+  // Check cache
+  if (cacheKey) {
+    const cache = await readCache();
+    const entry = cache.entries[cacheKey];
+    if (entry && isCacheEntryValid(entry)) {
+      return { success: true, results: entry.results };
+    }
   }
 
   const query = buildSearchQuery(keywords);
@@ -59,7 +169,21 @@ export async function searchGitHubForSkills(task: string): Promise<WebDiscoveryR
     skills.sort((a, b) => b.stars - a.stars);
 
     // Cap at 5 results
-    return { success: true, results: skills.slice(0, 5) };
+    const capped = skills.slice(0, 5);
+
+    // Store in cache
+    if (cacheKey) {
+      const cache = await readCache();
+      cache.entries[cacheKey] = {
+        results: capped,
+        timestamp: new Date().toISOString(),
+        ttl_hours: DEFAULT_TTL_HOURS,
+      };
+      evictOldest(cache);
+      await writeCache(cache);
+    }
+
+    return { success: true, results: capped };
   } catch (err) {
     return { success: false, results: [], error: `GitHub search failed: ${(err as Error).message}` };
   }

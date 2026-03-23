@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { searchGitHubForSkills, fetchDiscoveredSkill, formatDiscoveryResults, scanForPromptInjection } from "./web-discovery.js";
-import type { DiscoveredSkill } from "./web-discovery.js";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import { searchGitHubForSkills, fetchDiscoveredSkill, formatDiscoveryResults, scanForPromptInjection, clearDiscoveryCache, normalizeCacheKey, _setCacheFilePath, _resetCacheFilePath } from "./web-discovery.js";
+import type { DiscoveredSkill, DiscoveryCache } from "./web-discovery.js";
+import { writeFile, mkdir, rm, readFile } from "fs/promises";
+import { join } from "path";
+import { tmpdir } from "os";
 
 describe("web-discovery", () => {
   const originalFetch = globalThis.fetch;
@@ -262,6 +265,220 @@ describe("web-discovery", () => {
       const result = await fetchDiscoveredSkill("https://github.com/test/repo/blob/main/SKILL.md");
       expect(result.success).toBe(false);
       expect(result.error).toContain("50KB");
+    });
+  });
+
+  describe("discovery cache", () => {
+    let cacheDir: string;
+    let cacheFile: string;
+
+    beforeEach(async () => {
+      cacheDir = join(tmpdir(), `superskill-cache-test-${process.pid}-${Date.now()}`);
+      await mkdir(cacheDir, { recursive: true });
+      cacheFile = join(cacheDir, "discovery-cache.json");
+      _setCacheFilePath(cacheFile);
+    });
+
+    afterEach(async () => {
+      _resetCacheFilePath();
+      await rm(cacheDir, { recursive: true, force: true }).catch(() => {});
+    });
+
+    function makeMockSkill(name: string): DiscoveredSkill {
+      return {
+        name,
+        description: "Test skill",
+        source_url: `https://github.com/test/${name}/blob/main/SKILL.md`,
+        repo: `test/${name}`,
+        stars: 10,
+        updated_at: "2026-03-20T00:00:00Z",
+        path: "SKILL.md",
+      };
+    }
+
+    it("cache hit returns stored results without API call", async () => {
+      // Pre-populate cache
+      const cached: DiscoveryCache = {
+        entries: {
+          [normalizeCacheKey("product management skills")]: {
+            results: [makeMockSkill("cached-skill")],
+            timestamp: new Date().toISOString(),
+            ttl_hours: 24,
+          },
+        },
+      };
+      await writeFile(cacheFile, JSON.stringify(cached), "utf-8");
+
+      const fetchSpy = vi.fn();
+      globalThis.fetch = fetchSpy;
+
+      const result = await searchGitHubForSkills("product management skills");
+      expect(result.success).toBe(true);
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].name).toBe("cached-skill");
+      // No API calls made
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("cache miss triggers API call and stores results", async () => {
+      const mockCodeResponse = {
+        items: [
+          {
+            name: "SKILL.md",
+            path: "skills/test-skill/SKILL.md",
+            html_url: "https://github.com/test/repo/blob/main/skills/test-skill/SKILL.md",
+            repository: {
+              full_name: "test/repo",
+              description: "A test repo",
+              stargazers_count: 5,
+              updated_at: "2026-03-20T00:00:00Z",
+            },
+          },
+        ],
+      };
+
+      globalThis.fetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockCodeResponse) } as Response)
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ items: [] }) } as Response);
+
+      const result = await searchGitHubForSkills("product management skills");
+      expect(result.success).toBe(true);
+      expect(result.results.length).toBeGreaterThan(0);
+
+      // Verify cache was written
+      const raw = await readFile(cacheFile, "utf-8");
+      const cache = JSON.parse(raw) as DiscoveryCache;
+      const key = normalizeCacheKey("product management skills");
+      expect(cache.entries[key]).toBeDefined();
+      expect(cache.entries[key].results.length).toBeGreaterThan(0);
+    });
+
+    it("expired cache (>24h) triggers fresh API call", async () => {
+      // Pre-populate with expired entry
+      const expired: DiscoveryCache = {
+        entries: {
+          [normalizeCacheKey("product management skills")]: {
+            results: [makeMockSkill("old-skill")],
+            timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+            ttl_hours: 24,
+          },
+        },
+      };
+      await writeFile(cacheFile, JSON.stringify(expired), "utf-8");
+
+      const mockCodeResponse = {
+        items: [
+          {
+            name: "SKILL.md",
+            path: "skills/fresh-skill/SKILL.md",
+            html_url: "https://github.com/test/fresh/blob/main/skills/fresh-skill/SKILL.md",
+            repository: {
+              full_name: "test/fresh",
+              description: "Fresh repo",
+              stargazers_count: 20,
+              updated_at: "2026-03-22T00:00:00Z",
+            },
+          },
+        ],
+      };
+
+      globalThis.fetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockCodeResponse) } as Response)
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ items: [] }) } as Response);
+
+      const result = await searchGitHubForSkills("product management skills");
+      expect(result.success).toBe(true);
+      // Should have fetched fresh results, not returned old cached one
+      expect(globalThis.fetch).toHaveBeenCalled();
+      expect(result.results[0].repo).toBe("test/fresh");
+    });
+
+    it("evicts oldest entries when cache exceeds 100", async () => {
+      // Build a cache with 100 entries
+      const cache: DiscoveryCache = { entries: {} };
+      for (let i = 0; i < 100; i++) {
+        cache.entries[`key-${String(i).padStart(3, "0")}`] = {
+          results: [],
+          timestamp: new Date(Date.now() - (100 - i) * 1000).toISOString(),
+          ttl_hours: 24,
+        };
+      }
+      await writeFile(cacheFile, JSON.stringify(cache), "utf-8");
+
+      // Trigger a new search to add entry #101
+      const mockCodeResponse = {
+        items: [
+          {
+            name: "SKILL.md",
+            path: "skills/new/SKILL.md",
+            html_url: "https://github.com/test/new/blob/main/skills/new/SKILL.md",
+            repository: {
+              full_name: "test/new",
+              description: "New",
+              stargazers_count: 1,
+              updated_at: "2026-03-22T00:00:00Z",
+            },
+          },
+        ],
+      };
+
+      globalThis.fetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockCodeResponse) } as Response)
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ items: [] }) } as Response);
+
+      await searchGitHubForSkills("product management skills");
+
+      const raw = await readFile(cacheFile, "utf-8");
+      const updated = JSON.parse(raw) as DiscoveryCache;
+      expect(Object.keys(updated.entries).length).toBeLessThanOrEqual(100);
+    });
+
+    it("handles cache corruption gracefully (treated as miss)", async () => {
+      // Write invalid JSON
+      await writeFile(cacheFile, "NOT VALID JSON {{{", "utf-8");
+
+      const mockCodeResponse = {
+        items: [
+          {
+            name: "SKILL.md",
+            path: "skills/fallback/SKILL.md",
+            html_url: "https://github.com/test/fallback/blob/main/skills/fallback/SKILL.md",
+            repository: {
+              full_name: "test/fallback",
+              description: "Fallback",
+              stargazers_count: 3,
+              updated_at: "2026-03-22T00:00:00Z",
+            },
+          },
+        ],
+      };
+
+      globalThis.fetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockCodeResponse) } as Response)
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ items: [] }) } as Response);
+
+      const result = await searchGitHubForSkills("product management skills");
+      expect(result.success).toBe(true);
+      expect(result.results[0].repo).toBe("test/fallback");
+    });
+
+    it("clearDiscoveryCache empties the cache", async () => {
+      const cache: DiscoveryCache = {
+        entries: {
+          "some-key": {
+            results: [makeMockSkill("cached")],
+            timestamp: new Date().toISOString(),
+            ttl_hours: 24,
+          },
+        },
+      };
+      await writeFile(cacheFile, JSON.stringify(cache), "utf-8");
+
+      await clearDiscoveryCache();
+
+      const raw = await readFile(cacheFile, "utf-8");
+      const cleared = JSON.parse(raw) as DiscoveryCache;
+      expect(Object.keys(cleared.entries)).toHaveLength(0);
     });
   });
 });
