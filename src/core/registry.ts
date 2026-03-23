@@ -538,27 +538,19 @@ export function createRegistry(): CommandRegistry {
     }) as CommandHandler,
     toolDef: {
       name: "superskill",
-      description: `Load expert methodology before starting work. YOU decide when a task needs a skill — use your judgment based on the user's intent, not just their exact words.
+      description: `SuperSkill is your skill package manager — expert methodologies for any coding task, fetched on demand. Call superskill whenever you're about to:
 
-Pick the domain that fits the user's intent:
-- **brainstorming**: Thinking through problems, exploring ideas, discussing approaches, ideating, "let's think about this", "what if we...", creative exploration
-- **planning**: Making plans, designing architecture, implementation strategy, "how should we build this", scoping work, checkpoints
-- **code-review**: Reviewing code, PR review, checking quality, giving feedback, "look at this code", code critique
-- **tdd**: Writing tests, test-driven development, coverage, specs, "make sure this works", quality assurance, verification of behavior
-- **debugging**: Finding bugs, investigating errors, troubleshooting, "why isn't this working", fixing issues, root cause analysis
-- **security**: Security review, vulnerabilities, auth, permissions, "is this safe", OWASP, penetration testing, hardening
-- **verification**: Build checks, lint, type checking, CI validation, "does this compile", pre-commit verification
-- **shipping**: Deploying, releasing, CI/CD, Docker, "ship it", going to production, rollbacks
-- **frontend-design**: UI/UX design, components, layouts, CSS, "make it look good", visual design, responsive design
-- **agent-orchestration**: Multi-agent coordination, parallel tasks, subagents, "run these in parallel"
-- **database**: SQL, schemas, migrations, queries, data modeling, "optimize this query"
+- Write, review, test, or debug code
+- Plan, architect, or design something
+- Ship, deploy, or secure a system
+- Research, write content, or prepare materials
 
-Multiple domains can be comma-separated: domain: "planning,security"`,
+Describe the task and SuperSkill finds the right methodology. Don't overthink domain selection — just describe what you need.`,
       inputSchema: {
         type: "object" as const,
         properties: {
-          domain: { type: "string", description: "The skill domain(s) to load. Preferred — you pick the domain based on user intent. Comma-separate for multiple: 'planning,security'" },
-          task: { type: "string", description: "Free-text fallback: describe the task and SuperSkill will try to auto-match a domain. Use 'domain' instead when you know which domain fits." },
+          task: { type: "string", description: "Describe what you're doing — SuperSkill finds the right methodology. This is the primary input." },
+          domain: { type: "string", description: "Optional: pass domain(s) directly if you know them. Comma-separate for multiple: 'planning,security'" },
           skill_id: { type: "string", description: "Load a specific skill by ID (e.g. 'ecc/tdd-workflow'). For precise control." },
           action: { type: "string", enum: ["activate", "manifest", "load"], description: "Action: activate (default), manifest (list all), load (by skill_id)" },
           profile: { type: "string", description: "Profile: ecc-first, superpowers-first, minimal. Auto-detected if omitted." },
