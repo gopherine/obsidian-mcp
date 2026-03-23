@@ -506,20 +506,44 @@ export async function loadSkillContent(skillId: string): Promise<{
 // ── Smart Skill Activator ─────────────────────────────
 
 const TASK_DOMAIN_MAP: Array<{ patterns: RegExp[]; domains: string[] }> = [
-  { patterns: [/brainstorm/i, /ideate/i, /office.?hours/i, /explore ideas/i], domains: ["brainstorming"] },
-  { patterns: [/test/i, /tdd/i, /spec/i, /coverage/i, /unit test/i], domains: ["tdd"] },
-  { patterns: [/review/i, /code review/i, /pr review/i, /pull request/i], domains: ["code-review"] },
-  { patterns: [/plan/i, /architect/i, /design.*system/i, /implementation plan/i], domains: ["planning"] },
-  { patterns: [/debug/i, /investigate/i, /fix.*bug/i, /troubleshoot/i, /error/i], domains: ["debugging"] },
-  { patterns: [/secur/i, /vulnerab/i, /owasp/i, /auth.*review/i, /pentest/i], domains: ["security"] },
-  { patterns: [/deploy/i, /ship/i, /release/i, /ci.?cd/i, /docker/i], domains: ["shipping"] },
-  { patterns: [/verify/i, /validate/i, /check.*build/i, /lint/i], domains: ["verification"] },
-  { patterns: [/frontend/i, /ui/i, /ux/i, /component/i, /design.*page/i, /css/i, /tailwind/i], domains: ["frontend-design"] },
+  // Core workflow domains
+  { patterns: [/brainstorm/i, /ideate/i, /explore ideas/i, /think through/i, /what if/i], domains: ["brainstorming"] },
+  { patterns: [/test/i, /tdd/i, /spec/i, /coverage/i, /unit test/i, /assert/i], domains: ["tdd"] },
+  { patterns: [/review/i, /code review/i, /pr review/i, /pull request/i, /feedback/i], domains: ["code-review"] },
+  { patterns: [/plan/i, /architect/i, /design.*system/i, /implementation plan/i, /roadmap/i], domains: ["planning"] },
+  { patterns: [/debug/i, /investigate/i, /fix.*bug/i, /troubleshoot/i, /error/i, /broken/i], domains: ["debugging"] },
+  { patterns: [/secur/i, /vulnerab/i, /owasp/i, /auth.*review/i, /pentest/i, /hardening/i], domains: ["security"] },
+  { patterns: [/deploy/i, /ship/i, /release/i, /ci.?cd/i, /rollback/i, /production/i], domains: ["shipping"] },
+  { patterns: [/verify/i, /validate/i, /check.*build/i, /lint/i, /type.?check/i], domains: ["verification"] },
+  { patterns: [/frontend/i, /ui\b/i, /ux\b/i, /component/i, /design.*page/i, /css/i, /tailwind/i, /layout/i], domains: ["frontend-design"] },
   { patterns: [/agent/i, /orchestrat/i, /subagent/i, /parallel.*agent/i, /multi.*agent/i], domains: ["agent-orchestration"] },
-  { patterns: [/database/i, /sql/i, /schema/i, /migration/i, /query/i], domains: ["database"] },
+  { patterns: [/database/i, /sql\b/i, /schema/i, /migration/i, /query/i, /postgres/i, /mysql/i, /supabase/i], domains: ["database"] },
+  // Language and framework domains
+  { patterns: [/\bgo\b/i, /golang/i, /go test/i, /goroutine/i, /go mod/i], domains: ["go"] },
+  { patterns: [/python/i, /pytest/i, /pip/i, /django/i, /flask/i, /fastapi/i], domains: ["python"] },
+  { patterns: [/django/i, /drf\b/i, /django rest/i], domains: ["django"] },
+  { patterns: [/spring/i, /spring boot/i, /java\b/i, /jpa\b/i, /hibernate/i, /maven/i, /gradle/i], domains: ["spring-boot", "java"] },
+  { patterns: [/swift/i, /swiftui/i, /ios\b/i, /xcode/i, /uikit/i], domains: ["swift"] },
+  { patterns: [/\bc\+\+/i, /cpp\b/i, /cmake/i, /clang/i], domains: ["cpp"] },
+  { patterns: [/docker/i, /container/i, /compose/i, /dockerfile/i, /k8s/i, /kubernetes/i], domains: ["docker"] },
+  // API and patterns
+  { patterns: [/api design/i, /rest api/i, /endpoint/i, /pagination/i, /rate limit/i], domains: ["api-design"] },
+  { patterns: [/react/i, /next\.?js/i, /state management/i, /hooks/i, /redux/i], domains: ["frontend-patterns"] },
+  { patterns: [/express/i, /node\.?js/i, /server.*pattern/i, /middleware/i, /backend/i], domains: ["backend-patterns"] },
+  { patterns: [/coding standard/i, /style guide/i, /convention/i, /best practice/i], domains: ["coding-standards"] },
+  { patterns: [/git/i, /branch/i, /worktree/i, /merge/i, /rebase/i], domains: ["git-workflow"] },
+  // Content and business
+  { patterns: [/write.*article/i, /blog.*post/i, /content/i, /newsletter/i, /copywriting/i], domains: ["content-business"] },
+  { patterns: [/market.*research/i, /competitor/i, /competitive/i, /due diligence/i, /market siz/i], domains: ["content-business"] },
+  { patterns: [/investor/i, /pitch.*deck/i, /fundrais/i, /outreach/i, /cold email/i], domains: ["content-business"] },
+  { patterns: [/linkedin/i, /twitter/i, /social media/i, /marketing/i, /launch post/i], domains: ["content-business"] },
+  // 3D and animation
+  { patterns: [/three\.?js/i, /webgl/i, /3d\b/i, /animation/i, /gsap/i, /framer/i], domains: ["3d-animation"] },
+  // Agent engineering
+  { patterns: [/agent.*harness/i, /eval/i, /cost.*optim/i, /agent.*loop/i, /agent.*engineer/i], domains: ["agent-engineering"] },
 ];
 
-function matchTaskToDomains(task: string): string[] {
+export function matchTaskToDomains(task: string): string[] {
   const matched = new Set<string>();
   for (const entry of TASK_DOMAIN_MAP) {
     for (const pattern of entry.patterns) {
@@ -593,25 +617,26 @@ export async function activateSkills(options: {
     winnerMap.set(r.domain, r.chosen);
   }
 
-  // For each matched domain, find the winning skill (or first skill if no collision)
+  // For each matched domain, load all skills — collision winners first, then the rest
   const skillsToLoad: CatalogSkill[] = [];
   const seenIds = new Set<string>();
 
   for (const domain of matchedDomains) {
+    // Collision winner goes first if present
     const winnerId = winnerMap.get(domain);
     if (winnerId && !seenIds.has(winnerId)) {
       const entry = CATALOG.find((s) => s.id === winnerId);
       if (entry) {
         skillsToLoad.push(entry);
         seenIds.add(winnerId);
-        continue;
       }
     }
-    // No collision winner — find first skill in this domain
-    const domainSkill = CATALOG.find((s) => s.domains.includes(domain) && !seenIds.has(s.id));
-    if (domainSkill) {
-      skillsToLoad.push(domainSkill);
-      seenIds.add(domainSkill.id);
+    // Then all other skills in this domain
+    for (const skill of CATALOG) {
+      if (skill.domains.includes(domain) && !seenIds.has(skill.id)) {
+        skillsToLoad.push(skill);
+        seenIds.add(skill.id);
+      }
     }
   }
 
@@ -659,22 +684,15 @@ export function getSkillAwarenessBlock(): string {
     "",
     "## SuperSkill — Expert Methodologies",
     "",
-    "You have **superskill** — call it to load expert methodology before starting work.",
-    "Use YOUR judgment to decide when a task needs a skill. Pass the `domain` parameter:",
+    "You have **superskill** — your skill package manager. Call it whenever you're about to:",
     "",
-    "- **brainstorming** — thinking through problems, exploring ideas, discussing approaches",
-    "- **planning** — architecture, implementation strategy, scoping",
-    "- **code-review** — reviewing code, PR feedback, quality checks",
-    "- **tdd** — writing tests, coverage, test-driven development",
-    "- **debugging** — investigating errors, troubleshooting, root cause analysis",
-    "- **security** — vulnerability review, auth, hardening",
-    "- **verification** — build checks, lint, type validation",
-    "- **shipping** — deployment, CI/CD, releases",
-    "- **frontend-design** — UI/UX, components, visual design",
-    "- **agent-orchestration** — multi-agent, parallel tasks",
-    "- **database** — SQL, schemas, migrations, queries",
+    "- Write, review, test, or debug code",
+    "- Plan, architect, or design something",
+    "- Ship, deploy, or secure a system",
+    "- Research, write content, or prepare materials",
     "",
-    "Example: `superskill({domain: \"brainstorming\"})` or multiple: `superskill({domain: \"planning,security\"})`",
+    "Just describe the task: `superskill({task: \"write tests for my Go API\"})`",
+    "SuperSkill finds the right methodology from " + CATALOG.length + "+ skills across " + new Set(CATALOG.map(s => s.repo)).size + " repos.",
     "",
   ].join("\n");
 }
