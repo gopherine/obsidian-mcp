@@ -1,6 +1,6 @@
 {
   "name": "superskill",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Universal agentic knowledge base + context optimizer + skill marketplace for AI tools",
   "type": "module",
   "main": "dist/mcp-server.js",
