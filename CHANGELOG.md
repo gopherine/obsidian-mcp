@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.7] - 2026-03-23
 
 ### Added
 - **Prefetch core skills on install** — 8 core skills (brainstorming, planning, TDD, code review, debugging, security, verification, shipping) fetched from source repos during `npm install` and cached at `~/.superskill/cache/` for offline availability (#6)
@@ -112,6 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI shorthand commands (`r`, `w`, `s`, `c`, `t`, `l`, `sk`)
 - MCP tool annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`)
 
+[0.2.7]: https://github.com/permanu/superskill/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/permanu/superskill/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/permanu/superskill/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/permanu/superskill/compare/v0.2.0...v0.2.4
