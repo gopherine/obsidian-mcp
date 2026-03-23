@@ -108,7 +108,7 @@ export function scanForPromptInjection(content: string): { blocked: boolean; rea
   // Hard blocks — these should never appear in a skill file
   const blockedPatterns: Array<{ pattern: RegExp; reason: string }> = [
     { pattern: /ignore (all |any )?(previous|prior|above) (instructions|prompts|context)/i, reason: "Prompt override attempt" },
-    { pattern: /you are now|you must now act as|forget (all |everything )?you/i, reason: "Identity override attempt" },
+    { pattern: /forget (all |everything )?(you|your|previous)/i, reason: "Memory wipe attempt" },
     { pattern: /do not (tell|inform|reveal|mention|show) (the user|anyone)/i, reason: "Secrecy instruction — skills should be transparent" },
     { pattern: /exfiltrate|steal|extract.*secret|send.*to.*http/i, reason: "Data exfiltration pattern" },
     { pattern: /curl\s+.*\|.*sh/i, reason: "Remote code execution via pipe to shell" },
@@ -135,6 +135,9 @@ export function scanForPromptInjection(content: string): { blocked: boolean; rea
   }
   if (lower.includes("system prompt") || lower.includes("system message")) {
     warnings.push("References system prompts — may attempt to modify LLM behavior");
+  }
+  if (/you are now|you must now act as/i.test(content)) {
+    warnings.push("Contains role-play instructions — common in skills but review for legitimacy");
   }
 
   return { blocked: false, warnings };
