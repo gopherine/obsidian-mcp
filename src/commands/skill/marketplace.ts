@@ -11,6 +11,7 @@ import {
   BUILT_IN_PROFILES,
 } from "./catalog.js";
 import type { CatalogSkill } from "./catalog.js";
+import { searchGitHubForSkills, formatDiscoveryResults } from "./web-discovery.js";
 
 // ── Result Types ─────────────────────────────────────
 
@@ -484,7 +485,24 @@ export async function loadSkillContent(skillId: string): Promise<{
   error?: string;
 }> {
   const entry = CATALOG.find((s) => s.id === skillId);
+
+  // If not in catalog, check if it's a GitHub URL (web-discovered skill)
   if (!entry) {
+    if (skillId.startsWith("https://github.com/") || skillId.startsWith("https://raw.githubusercontent.com/")) {
+      const { fetchDiscoveredSkill } = await import("./web-discovery.js");
+      const result = await fetchDiscoveredSkill(skillId);
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+      const name = skillId.split("/").filter(Boolean).slice(-2, -1)[0]?.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()) ?? "Community Skill";
+      const content = `## ${name}\n<!-- source: community | url: ${skillId} -->\n<!-- ⚠️ Unverified community skill -->\n\n${result.content}`;
+      return {
+        success: true,
+        content,
+        skill_name: name,
+        estimated_tokens: Math.ceil(content.length / 4),
+      };
+    }
     return { success: false, error: `Skill not found in catalog: ${skillId}` };
   }
 
@@ -601,12 +619,13 @@ export async function activateSkills(options: {
   }
 
   if (matchedDomains.length === 0) {
+    // Web discovery fallback — search GitHub for community skills
+    const discovery = await searchGitHubForSkills(options.task);
+    const content = formatDiscoveryResults(options.task, discovery.results);
     return {
       success: true,
       skills_loaded: [],
-      content: "No matching skills found. Available domains:\n" +
-        DOMAINS.map((d) => `- **${d.id}**: ${d.description}`).join("\n") +
-        "\n\nPass the domain directly: superskill({domain: \"brainstorming\"})",
+      content,
       matched_domains: [],
       total_tokens: 0,
     };
