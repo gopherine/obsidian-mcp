@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-03-23
+
+### Added
+- **Claude Code Plugin Discovery** — `marketplace.json` manifest for first-class plugin marketplace listing
+- **Legacy Migration** — Setup automatically detects and removes old `obsidian-mcp` / `obsidian-kb` MCP entries during install
+
+### Fixed
+- **Plugin MCP server** now uses `npx superskill@latest` instead of local `dist/` path — works reliably as an installed plugin without requiring the repo to be cloned locally
+- **Teardown** cleans up all legacy entry names (`obsidian-mcp`, `obsidian-kb`) in addition to `superskill`
+
+### Changed
+- Version bump from 0.2.0 to 0.2.4
+
 ## [0.2.0] - 2026-03-22
 
 ### Added
@@ -56,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI shorthand commands (`r`, `w`, `s`, `c`, `t`, `l`, `sk`)
 - MCP tool annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`)
 
+[0.2.4]: https://github.com/permanu/superskill/compare/v0.2.0...v0.2.4
 [0.2.0]: https://github.com/permanu/superskill/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/permanu/superskill/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/permanu/superskill/releases/tag/v0.1.1
