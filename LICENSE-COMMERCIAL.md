@@ -33,7 +33,6 @@ The Commercial License includes:
 ## Pricing
 
 Commercial license fees are based on organization size:
-- **$1M - $10M annual revenue**: $500/year
 - **$10M - $50M annual revenue**: $2,000/year
 - **$50M+ annual revenue**: $5,000/year
 
@@ -43,4 +42,4 @@ For commercial licensing inquiries: license@permanu.com
 
 ## Effective Date
 
-These terms are effective as of March 2026.
+These terms are effective as of March 2027.
