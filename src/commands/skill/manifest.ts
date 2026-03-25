@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
-import { CATALOG } from "./catalog.js";
+// SPDX-License-Identifier: AGPL-3.0-or-later
+import { getCatalog } from "./catalog.js";
 import { resolveCommand } from "./resolve.js";
 import { fetchSkillContent, formatSection, classifySkill } from "./helpers.js";
 
@@ -36,7 +36,7 @@ export async function generateManifest(options: {
 
   const manifest: ManifestEntry[] = [];
   for (const skillId of resolution.active_skills) {
-    const entry = CATALOG.find((s) => s.id === skillId);
+    const entry = getCatalog().find((s) => s.id === skillId);
     if (!entry) continue;
 
     const layer = classifySkill(skillId, collisionWinnerIds);
@@ -69,7 +69,7 @@ export async function loadSkillContent(skillId: string): Promise<{
   estimated_tokens?: number;
   error?: string;
 }> {
-  const entry = CATALOG.find((s) => s.id === skillId);
+  const entry = getCatalog().find((s) => s.id === skillId);
 
   // If not in catalog, check if it's a GitHub URL (web-discovered skill)
   if (!entry) {
@@ -121,7 +121,7 @@ export function getSkillAwarenessBlock(): string {
     "- Research, write content, or prepare materials",
     "",
     "Just describe the task: `superskill({task: \"write tests for my Go API\"})`",
-    "SuperSkill finds the right methodology from " + CATALOG.length + "+ skills across " + new Set(CATALOG.map(s => s.repo)).size + " repos.",
+    "SuperSkill finds the right methodology from " + getCatalog().length + "+ skills across " + new Set(getCatalog().map(s => s.repo)).size + " repos.",
     "",
   ].join("\n");
 }

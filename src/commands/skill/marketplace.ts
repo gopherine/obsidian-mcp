@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //
 // Barrel re-export — this file preserves backward compatibility.
 // All logic has been split into focused modules:

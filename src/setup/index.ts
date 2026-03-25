@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { Command } from "commander";
 import { CLIENT_REGISTRY } from "./clients.js";
 import { detectClients } from "./detect.js";

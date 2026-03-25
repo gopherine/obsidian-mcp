@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { resolve, relative } from "path";

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { ClientConfig } from "./types.js";
 
 function home(sub: string): Record<"darwin" | "linux" | "win32", string> {

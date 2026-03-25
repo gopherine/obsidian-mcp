@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, readdir } from "fs/promises";
 import { join } from "path";

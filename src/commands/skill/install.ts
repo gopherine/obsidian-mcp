@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { readFile, mkdir, rm } from "fs/promises";
 import { dirname, basename } from "path";
 import { VaultFS } from "../../lib/vault-fs.js";

@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+// SPDX-License-Identifier: AGPL-3.0-or-later
+import { describe, it, expect, vi, afterEach, beforeEach, beforeAll, afterAll } from "vitest";
 import { activateSkills, generateManifest } from "./marketplace.js";
-import { CATALOG } from "./catalog.js";
+import { getCatalog, setRegistryData, _clearRegistryData } from "./catalog.js";
+import { loadRegistry, _clearRegistry } from "../../lib/registry-loader.js";
 
 /**
  * Integration tests for the skill activation flow (activateSkills).
@@ -22,6 +23,17 @@ function mockFetchOk(content: string = FAKE_SKILL_CONTENT) {
 }
 
 describe("activateSkills integration", () => {
+  beforeAll(async () => {
+    // Load the registry so getCatalog() returns all 87 skills
+    const registry = await loadRegistry();
+    setRegistryData(registry);
+  });
+
+  afterAll(() => {
+    _clearRegistryData();
+    _clearRegistry();
+  });
+
   beforeEach(() => {
     mockFetchOk();
   });
@@ -142,7 +154,7 @@ describe("activateSkills integration", () => {
   // 9. Max 3 skills per domain cap
   it("caps skills at 3 per domain", async () => {
     // The tdd domain has 9 skills in the catalog
-    const tddSkillCount = CATALOG.filter(s => s.domains.includes("tdd")).length;
+    const tddSkillCount = getCatalog().filter(s => s.domains.includes("tdd")).length;
     expect(tddSkillCount).toBeGreaterThan(3); // precondition
 
     const result = await activateSkills({ task: "", domain: "tdd" });
@@ -177,7 +189,7 @@ describe("activateSkills integration", () => {
       }
 
       // Every manifest entry should correspond to a catalog skill
-      const catalogIds = new Set(CATALOG.map(s => s.id));
+      const catalogIds = new Set(getCatalog().map(s => s.id));
       for (const entry of result.manifest!) {
         expect(catalogIds.has(entry.id)).toBe(true);
       }

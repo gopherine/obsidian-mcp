@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { VaultFS } from "../../lib/vault-fs.js";
 import { SkillRegistryManager } from "../../lib/skill-registry.js";
 import { installSkill, deleteSkill, InstallResult } from "./install.js";

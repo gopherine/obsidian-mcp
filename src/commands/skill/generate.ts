@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { VaultFS } from "../../lib/vault-fs.js";
-import { CATALOG } from "./catalog.js";
+import { getCatalog } from "./catalog.js";
 import type { CatalogSkill } from "./catalog.js";
 import { resolveCommand } from "./resolve.js";
 import {
@@ -53,7 +53,7 @@ async function fetchAllSkills(
   for (const chunk of chunks) {
     const settled = await Promise.allSettled(
       chunk.map(async (id): Promise<{ id: string; content: string } | { id: string; error: string }> => {
-        const entry = CATALOG.find((s) => s.id === id);
+        const entry = getCatalog().find((s) => s.id === id);
         if (!entry) return { id, error: "not in catalog" };
         const content = await fetchSkillContent(entry.source);
         return { id, content };
@@ -115,7 +115,7 @@ export async function generateCommand(
     const relevantSet = new Set(options.relevantDomains);
     const before = activeSkillIds.length;
     activeSkillIds = activeSkillIds.filter((id) => {
-      const entry = CATALOG.find((s) => s.id === id);
+      const entry = getCatalog().find((s) => s.id === id);
       if (!entry) return true; // keep unknowns, they'll fail at fetch
       return entry.domains.some((d) => relevantSet.has(d));
     });
@@ -146,7 +146,7 @@ export async function generateCommand(
       continue;
     }
 
-    const entry = CATALOG.find((s) => s.id === skillId);
+    const entry = getCatalog().find((s) => s.id === skillId);
     if (!entry) {
       fetchErrors.push(`${skillId}: not found in catalog`);
       continue;

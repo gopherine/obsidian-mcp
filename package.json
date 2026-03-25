@@ -27,8 +27,8 @@
     ".mcp.json",
     "README.md",
     "LICENSE",
-    "LICENSE-COMMERCIAL.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "registry/"
   ],
   "scripts": {
     "build": "tsc",

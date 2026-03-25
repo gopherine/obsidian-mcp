@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { readFile } from "fs/promises";
-import { CATALOG, DOMAIN_PRIORITY } from "./catalog.js";
+import { getCatalog, getDomainPriority } from "./catalog.js";
 import type { CatalogSkill } from "./catalog.js";
 
 // ── Layer Types ──────────────────────────────────────
@@ -88,13 +88,13 @@ export function classifySkill(skillId: string, collisionWinnerIds: Set<string>):
   // Collision winners always go to core
   if (collisionWinnerIds.has(skillId)) return 'core';
 
-  const entry = CATALOG.find((s) => s.id === skillId);
+  const entry = getCatalog().find((s) => s.id === skillId);
   if (!entry) return 'reference';
 
   // Use highest-priority domain
   let best: LayerName = 'reference';
   for (const domain of entry.domains) {
-    const priority = DOMAIN_PRIORITY[domain];
+    const priority = getDomainPriority(domain);
     if (priority === 'core') return 'core';
     if (priority === 'extended') best = 'extended';
   }

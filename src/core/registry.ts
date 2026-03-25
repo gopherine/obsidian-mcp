@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { CommandContext, CommandHandler, CommandRegistration, MCPToolDefinition } from "./types.js";
 import { readCommand, listCommand } from "../commands/read.js";
 import { writeCommand } from "../commands/write.js";
@@ -13,6 +13,7 @@ import { learnCommand } from "../commands/learn.js";
 import type { Confidence } from "../commands/learn.js";
 import { pruneCommand, statsCommand, deprecateCommand } from "../commands/prune.js";
 import { resumeCommand } from "../commands/resume.js";
+import { getDomains } from "../commands/skill/catalog.js";
 import { initCommand } from "../commands/init.js";
 import { skillCommand } from "../commands/skill/index.js";
 import { generateManifest, loadSkillContent, activateSkills, getSkillAwarenessBlock } from "../commands/skill/marketplace.js";
@@ -538,12 +539,9 @@ export function createRegistry(): CommandRegistry {
     }) as CommandHandler,
     toolDef: {
       name: "superskill",
-      description: `SuperSkill is your skill package manager — expert methodologies for any coding task, fetched on demand. Call superskill whenever you're about to:
+      description: `SuperSkill is your skill package manager — expert methodologies for any coding task, fetched on demand.
 
-- Write, review, test, or debug code
-- Plan, architect, or design something
-- Ship, deploy, or secure a system
-- Research, write content, or prepare materials
+Covers: ${getDomains().map((d) => d.name).join(", ")}.
 
 Describe the task and SuperSkill finds the right methodology. Don't overthink domain selection — just describe what you need.`,
       inputSchema: {

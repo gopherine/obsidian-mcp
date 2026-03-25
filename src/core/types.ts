@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { VaultFS } from '../lib/vault-fs.js';
 import type { SessionRegistryManager } from '../lib/session-registry.js';
 import type { Config } from '../config.js';

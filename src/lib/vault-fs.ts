@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { readFile, writeFile, appendFile, mkdir, readdir, stat, realpath, unlink, rename } from "fs/promises";
 import { join, resolve, relative, dirname } from "path";
 

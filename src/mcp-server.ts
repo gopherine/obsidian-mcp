@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -22,6 +22,8 @@ import { taskCommand } from "./commands/task.js";
 import { searchText, searchStructured } from "./lib/search-engine.js";
 import { formatResumeContext } from "./commands/resume.js";
 import { getSkillAwarenessBlock } from "./commands/skill/marketplace.js";
+import { loadRegistry } from "./lib/registry-loader.js";
+import { setRegistryData } from "./commands/skill/catalog.js";
 
 const registry = createRegistry();
 
@@ -410,6 +412,13 @@ function getTimeAgo(isoDate: string): string {
 // ── Start ─────────────────────────────────────────────
 
 async function main() {
+  // Load the skill registry before starting the server
+  try {
+    const registry = await loadRegistry();
+    setRegistryData(registry);
+  } catch {
+    // Non-fatal: catalog.ts fallbacks will be used
+  }
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

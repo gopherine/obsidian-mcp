@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { resolve, dirname } from "path";
 import { SkillRegistry, InstalledSkill } from "../commands/skill/schema.js";
