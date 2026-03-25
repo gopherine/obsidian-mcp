@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { readFile } from "fs/promises";
 import { resolve } from "path";
 import { execFile } from "child_process";

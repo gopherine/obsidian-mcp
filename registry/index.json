@@ -1,0 +1,1162 @@
+{
+  "registry_version": "0.3.0",
+  "generated_at": "2026-03-25T00:00:00Z",
+  "sources": {
+    "ecc": {
+      "repo": "affaan-m/everything-claude-code",
+      "base_url": "https://raw.githubusercontent.com/affaan-m/everything-claude-code/main"
+    },
+    "superpowers": {
+      "repo": "obra/superpowers",
+      "base_url": "https://raw.githubusercontent.com/obra/superpowers/main"
+    },
+    "gstack": {
+      "repo": "garrytan/gstack",
+      "base_url": "https://raw.githubusercontent.com/garrytan/gstack/main"
+    },
+    "anthropics": {
+      "repo": "anthropics/skills",
+      "base_url": "https://raw.githubusercontent.com/anthropics/skills/main"
+    },
+    "design-skillstack": {
+      "repo": "freshtechbro/claudedesignskills",
+      "base_url": "https://raw.githubusercontent.com/freshtechbro/claudedesignskills/main"
+    },
+    "taste-skill": {
+      "repo": "Leonxlnx/taste-skill",
+      "base_url": "https://raw.githubusercontent.com/Leonxlnx/taste-skill/main"
+    },
+    "bencium": {
+      "repo": "bencium/bencium-claude-code-design-skill",
+      "base_url": "https://raw.githubusercontent.com/bencium/bencium-claude-code-design-skill/main"
+    },
+    "frontend-design-pro": {
+      "repo": "claudekit/frontend-design-pro-demo",
+      "base_url": "https://raw.githubusercontent.com/claudekit/frontend-design-pro-demo/main"
+    },
+    "ui-ux-pro-max": {
+      "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "base_url": "https://raw.githubusercontent.com/nextlevelbuilder/ui-ux-pro-max-skill/main"
+    }
+  },
+  "domains": [
+    {
+      "id": "tdd",
+      "name": "Test-Driven Development",
+      "description": "TDD workflow and testing patterns",
+      "priority": "core",
+      "triggers": ["test", "tdd", "spec", "coverage", "unit test", "assert", "mock", "fixture", "testing", "test first", "red green refactor"]
+    },
+    {
+      "id": "planning",
+      "name": "Planning",
+      "description": "Implementation planning and review",
+      "priority": "core",
+      "triggers": ["plan", "architect", "design system", "implementation plan", "roadmap", "strategy", "scope", "requirements"]
+    },
+    {
+      "id": "code-review",
+      "name": "Code Review",
+      "description": "Reviewing and receiving code feedback",
+      "priority": "core",
+      "triggers": ["review", "code review", "pr review", "pull request", "feedback", "critique", "refactor review"]
+    },
+    {
+      "id": "debugging",
+      "name": "Debugging",
+      "description": "Systematic debugging and investigation",
+      "priority": "core",
+      "triggers": ["debug", "investigate", "fix bug", "troubleshoot", "error", "broken", "crash", "stack trace", "exception"]
+    },
+    {
+      "id": "verification",
+      "name": "Verification",
+      "description": "Pre-completion verification checks",
+      "priority": "core",
+      "triggers": ["verify", "validate", "check build", "lint", "type check", "pre-commit", "quality gate"]
+    },
+    {
+      "id": "brainstorming",
+      "name": "Brainstorming",
+      "description": "Ideation and exploratory thinking",
+      "priority": "core",
+      "triggers": ["brainstorm", "ideate", "explore ideas", "think through", "what if", "creative", "options", "alternatives"]
+    },
+    {
+      "id": "agent-orchestration",
+      "name": "Agent Orchestration",
+      "description": "Multi-agent loops and pipelines",
+      "priority": "core",
+      "triggers": ["agent", "orchestrate", "subagent", "parallel agent", "multi agent", "pipeline", "fan out", "dispatch"]
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "description": "Security review, scanning, guardrails",
+      "priority": "core",
+      "triggers": ["security", "vulnerability", "owasp", "auth review", "pentest", "hardening", "xss", "injection", "csrf"]
+    },
+    {
+      "id": "shipping",
+      "name": "Shipping",
+      "description": "Deployment and release workflow",
+      "priority": "core",
+      "triggers": ["deploy", "ship", "release", "ci cd", "rollback", "production", "launch", "publish"]
+    },
+    {
+      "id": "frontend-design",
+      "name": "Frontend Design",
+      "description": "UI/UX design and component systems",
+      "priority": "core",
+      "triggers": ["frontend", "ui", "ux", "component", "design page", "css", "tailwind", "layout", "responsive", "web design", "user interface", "user experience", "design system", "figma", "wireframe", "prototype"]
+    },
+    {
+      "id": "git-workflow",
+      "name": "Git Workflow",
+      "description": "Branching, worktrees, merge workflow",
+      "priority": "core",
+      "triggers": ["git", "branch", "worktree", "merge", "rebase", "cherry pick", "stash", "commit strategy"]
+    },
+    {
+      "id": "go",
+      "name": "Go",
+      "description": "Go idioms, patterns, testing, review",
+      "priority": "extended",
+      "triggers": ["golang", "go test", "goroutine", "go mod", "go func", "go package", "go interface", "go channel"]
+    },
+    {
+      "id": "python",
+      "name": "Python",
+      "description": "Python idioms, patterns, testing, review",
+      "priority": "extended",
+      "triggers": ["python", "pytest", "pip", "django", "flask", "fastapi", "pep8", "virtualenv", "poetry"]
+    },
+    {
+      "id": "django",
+      "name": "Django",
+      "description": "Django framework patterns and security",
+      "priority": "extended",
+      "triggers": ["django", "drf", "django rest", "django model", "django view", "manage.py", "django admin"]
+    },
+    {
+      "id": "spring-boot",
+      "name": "Spring Boot",
+      "description": "Spring Boot patterns and testing",
+      "priority": "extended",
+      "triggers": ["spring", "spring boot", "java", "jpa", "hibernate", "maven", "gradle", "spring security"]
+    },
+    {
+      "id": "swift",
+      "name": "Swift",
+      "description": "Swift/iOS/SwiftUI patterns",
+      "priority": "extended",
+      "triggers": ["swift", "swiftui", "ios", "xcode", "uikit", "cocoapods", "spm", "apple", "macos"]
+    },
+    {
+      "id": "cpp",
+      "name": "C++",
+      "description": "C++ patterns and testing",
+      "priority": "extended",
+      "triggers": ["c++", "cpp", "cmake", "clang", "gcc", "stl", "header file", "template"]
+    },
+    {
+      "id": "java",
+      "name": "Java",
+      "description": "Java patterns and standards",
+      "priority": "extended",
+      "triggers": ["java", "jvm", "maven", "gradle", "spring", "junit", "jackson"]
+    },
+    {
+      "id": "database",
+      "name": "Database",
+      "description": "Database patterns and migrations",
+      "priority": "extended",
+      "triggers": ["database", "sql", "schema", "migration", "postgres", "mysql", "supabase", "query", "index", "orm"]
+    },
+    {
+      "id": "docker",
+      "name": "Docker",
+      "description": "Docker and Compose patterns",
+      "priority": "extended",
+      "triggers": ["docker", "container", "compose", "dockerfile", "k8s", "kubernetes", "image", "registry"]
+    },
+    {
+      "id": "api-design",
+      "name": "API Design",
+      "description": "REST API design patterns",
+      "priority": "extended",
+      "triggers": ["api design", "rest api", "endpoint", "pagination", "rate limit", "openapi", "swagger", "graphql"]
+    },
+    {
+      "id": "frontend-patterns",
+      "name": "Frontend Patterns",
+      "description": "React/Next.js patterns",
+      "priority": "extended",
+      "triggers": ["react", "nextjs", "next.js", "state management", "hooks", "redux", "zustand", "tanstack"]
+    },
+    {
+      "id": "backend-patterns",
+      "name": "Backend Patterns",
+      "description": "Node/Express patterns",
+      "priority": "extended",
+      "triggers": ["express", "nodejs", "node.js", "server pattern", "middleware", "backend", "fastify"]
+    },
+    {
+      "id": "coding-standards",
+      "name": "Coding Standards",
+      "description": "Universal coding standards",
+      "priority": "extended",
+      "triggers": ["coding standard", "style guide", "convention", "best practice", "linter", "formatter"]
+    },
+    {
+      "id": "content-business",
+      "name": "Content & Business",
+      "description": "Writing, marketing, investor materials",
+      "priority": "reference",
+      "triggers": ["article", "blog post", "content", "newsletter", "copywriting", "market research", "competitor", "investor", "pitch deck", "fundraising", "outreach", "cold email", "linkedin", "twitter", "social media", "marketing"]
+    },
+    {
+      "id": "3d-animation",
+      "name": "3D Animation",
+      "description": "WebGL, Three.js, animation workflows",
+      "priority": "reference",
+      "triggers": ["threejs", "three.js", "webgl", "3d", "animation", "gsap", "framer", "babylon", "r3f", "react three fiber"]
+    },
+    {
+      "id": "agent-engineering",
+      "name": "Agent Engineering",
+      "description": "Agent harness, eval, cost optimization",
+      "priority": "reference",
+      "triggers": ["agent harness", "agent eval", "cost optimization", "agent loop", "agent engineer", "eval pipeline", "llm cost", "model routing"]
+    },
+    {
+      "id": "meta",
+      "name": "Meta/Tooling",
+      "description": "Skill management, compaction, learning",
+      "priority": "reference",
+      "triggers": ["skill manage", "compaction", "skill install", "learning capture", "skill create", "knowledge base"]
+    }
+  ],
+  "skills": [
+    {
+      "id": "ecc/tdd-workflow",
+      "name": "TDD Workflow",
+      "source": "ecc",
+      "path": "skills/tdd-workflow/SKILL.md",
+      "domains": ["tdd"],
+      "description": "Full TDD red-green-refactor loop with 80%+ coverage",
+      "triggers": ["red green refactor", "test first", "coverage threshold", "write test before code"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/golang-testing",
+      "name": "Go Testing",
+      "source": "ecc",
+      "path": "skills/golang-testing/SKILL.md",
+      "domains": ["tdd", "go"],
+      "description": "Go table-driven tests, benchmarks, fuzzing, TDD",
+      "triggers": ["go test", "table driven", "benchmark", "fuzz", "go coverage"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/python-testing",
+      "name": "Python Testing",
+      "source": "ecc",
+      "path": "skills/python-testing/SKILL.md",
+      "domains": ["tdd", "python"],
+      "description": "Python pytest, fixtures, mocking, parametrize",
+      "triggers": ["pytest", "fixture", "parametrize", "mock", "python coverage"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/e2e-testing",
+      "name": "E2E Testing",
+      "source": "ecc",
+      "path": "skills/e2e-testing/SKILL.md",
+      "domains": ["tdd"],
+      "description": "Playwright E2E patterns and CI/CD integration",
+      "triggers": ["playwright", "e2e", "end to end", "browser test", "cypress"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/plan",
+      "name": "/plan",
+      "source": "ecc",
+      "path": "commands/plan.md",
+      "domains": ["planning"],
+      "description": "Implementation planning slash command",
+      "triggers": ["implementation plan", "step by step", "task breakdown"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/go-review",
+      "name": "Go Review",
+      "source": "ecc",
+      "path": "commands/go-review.md",
+      "domains": ["code-review", "go"],
+      "description": "Go code review for idioms and concurrency",
+      "triggers": ["go review", "goroutine review", "go idiom"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/python-review",
+      "name": "Python Review",
+      "source": "ecc",
+      "path": "skills/python-review/SKILL.md",
+      "domains": ["code-review", "python"],
+      "description": "Python PEP 8, type hints, security review",
+      "triggers": ["python review", "pep8 review", "type hint"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/verification-loop",
+      "name": "Verification Loop",
+      "source": "ecc",
+      "path": "skills/verification-loop/SKILL.md",
+      "domains": ["verification"],
+      "description": "Build/types/lint/test verification gates",
+      "triggers": ["verification gate", "build check", "pre-merge"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/autonomous-loops",
+      "name": "Autonomous Loops",
+      "source": "ecc",
+      "path": "skills/autonomous-loops/SKILL.md",
+      "domains": ["agent-orchestration"],
+      "description": "Autonomous agent execution patterns",
+      "triggers": ["autonomous loop", "self-driving agent", "continuous execution"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/ralphinho-rfc-pipeline",
+      "name": "RFC Pipeline",
+      "source": "ecc",
+      "path": "skills/ralphinho-rfc-pipeline/SKILL.md",
+      "domains": ["agent-orchestration"],
+      "description": "RFC-driven multi-agent DAG execution",
+      "triggers": ["rfc pipeline", "dag execution", "merge queue"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/security-review",
+      "name": "Security Review",
+      "source": "ecc",
+      "path": "skills/security-review/SKILL.md",
+      "domains": ["security"],
+      "description": "Auth, input validation, secrets, OWASP checklist",
+      "triggers": ["security checklist", "owasp", "auth review", "input validation"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/security-scan",
+      "name": "Security Scan",
+      "source": "ecc",
+      "path": "skills/security-scan/SKILL.md",
+      "domains": ["security"],
+      "description": "AgentShield config scanning for Claude Code",
+      "triggers": ["security scan", "agentshield", "config scan"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/deployment-patterns",
+      "name": "Deployment Patterns",
+      "source": "ecc",
+      "path": "skills/deployment-patterns/SKILL.md",
+      "domains": ["shipping"],
+      "description": "CI/CD, Docker, health checks, rollbacks",
+      "triggers": ["deployment", "ci cd pipeline", "health check", "rollback strategy"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/golang-patterns",
+      "name": "Go Patterns",
+      "source": "ecc",
+      "path": "skills/golang-patterns/SKILL.md",
+      "domains": ["go"],
+      "description": "Idiomatic Go patterns and conventions",
+      "triggers": ["go pattern", "go idiom", "go convention", "go best practice"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/python-patterns",
+      "name": "Python Patterns",
+      "source": "ecc",
+      "path": "skills/python-patterns/SKILL.md",
+      "domains": ["python"],
+      "description": "Pythonic idioms and PEP 8 standards",
+      "triggers": ["python pattern", "pythonic", "pep8"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/django-patterns",
+      "name": "Django Patterns",
+      "source": "ecc",
+      "path": "skills/django-patterns/SKILL.md",
+      "domains": ["django"],
+      "description": "Django architecture, DRF, ORM patterns",
+      "triggers": ["django architecture", "drf pattern", "orm pattern", "django model"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/django-security",
+      "name": "Django Security",
+      "source": "ecc",
+      "path": "skills/django-security/SKILL.md",
+      "domains": ["django", "security"],
+      "description": "Django CSRF, XSS, SQL injection prevention",
+      "triggers": ["django csrf", "django xss", "django injection"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/django-tdd",
+      "name": "Django TDD",
+      "source": "ecc",
+      "path": "skills/django-tdd/SKILL.md",
+      "domains": ["django", "tdd"],
+      "description": "Django testing with pytest-django",
+      "triggers": ["django test", "pytest-django", "django fixture"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/django-verification",
+      "name": "Django Verification",
+      "source": "ecc",
+      "path": "skills/django-verification/SKILL.md",
+      "domains": ["django", "verification"],
+      "description": "Django verification loop",
+      "triggers": ["django verify", "django check", "django lint"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/springboot-patterns",
+      "name": "Spring Boot Patterns",
+      "source": "ecc",
+      "path": "skills/springboot-patterns/SKILL.md",
+      "domains": ["spring-boot"],
+      "description": "Spring Boot architecture and caching",
+      "triggers": ["spring boot pattern", "spring architecture", "spring cache"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/springboot-security",
+      "name": "Spring Boot Security",
+      "source": "ecc",
+      "path": "skills/springboot-security/SKILL.md",
+      "domains": ["spring-boot", "security"],
+      "description": "Spring Security authn/authz",
+      "triggers": ["spring security", "spring auth", "spring oauth"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/springboot-tdd",
+      "name": "Spring Boot TDD",
+      "source": "ecc",
+      "path": "skills/springboot-tdd/SKILL.md",
+      "domains": ["spring-boot", "tdd"],
+      "description": "Spring Boot JUnit 5, Mockito, Testcontainers",
+      "triggers": ["spring test", "junit5", "mockito", "testcontainers"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/springboot-verification",
+      "name": "Spring Boot Verification",
+      "source": "ecc",
+      "path": "skills/springboot-verification/SKILL.md",
+      "domains": ["spring-boot", "verification"],
+      "description": "Spring Boot verification loop",
+      "triggers": ["spring verify", "spring build check"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/swiftui-patterns",
+      "name": "SwiftUI Patterns",
+      "source": "ecc",
+      "path": "skills/swiftui-patterns/SKILL.md",
+      "domains": ["swift"],
+      "description": "SwiftUI state management, navigation, performance",
+      "triggers": ["swiftui pattern", "swiftui state", "swiftui navigation"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/swift-concurrency",
+      "name": "Swift Concurrency",
+      "source": "ecc",
+      "path": "skills/swift-concurrency-6-2/SKILL.md",
+      "domains": ["swift"],
+      "description": "Swift 6.2 concurrency model",
+      "triggers": ["swift concurrency", "async await swift", "swift actor"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/swift-actor-persistence",
+      "name": "Swift Actor Persistence",
+      "source": "ecc",
+      "path": "skills/swift-actor-persistence/SKILL.md",
+      "domains": ["swift"],
+      "description": "Thread-safe data persistence with actors",
+      "triggers": ["swift actor", "swift persistence", "thread safe storage"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/swift-protocol-di",
+      "name": "Swift Protocol DI",
+      "source": "ecc",
+      "path": "skills/swift-protocol-di-testing/SKILL.md",
+      "domains": ["swift"],
+      "description": "Protocol-based dependency injection for testing",
+      "triggers": ["swift protocol", "swift dependency injection", "swift di"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/cpp-coding-standards",
+      "name": "C++ Standards",
+      "source": "ecc",
+      "path": "skills/cpp-coding-standards/SKILL.md",
+      "domains": ["cpp"],
+      "description": "C++ Core Guidelines enforcement",
+      "triggers": ["cpp standard", "c++ guideline", "core guidelines"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/cpp-testing",
+      "name": "C++ Testing",
+      "source": "ecc",
+      "path": "skills/cpp-testing/SKILL.md",
+      "domains": ["cpp", "tdd"],
+      "description": "GoogleTest/CTest patterns",
+      "triggers": ["gtest", "googletest", "ctest", "cpp test"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/java-coding-standards",
+      "name": "Java Standards",
+      "source": "ecc",
+      "path": "skills/java-coding-standards/SKILL.md",
+      "domains": ["java"],
+      "description": "Java Spring Boot coding standards",
+      "triggers": ["java standard", "java convention", "java naming"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/jpa-patterns",
+      "name": "JPA Patterns",
+      "source": "ecc",
+      "path": "skills/jpa-patterns/SKILL.md",
+      "domains": ["java", "database"],
+      "description": "JPA/Hibernate entity and query patterns",
+      "triggers": ["jpa", "hibernate", "entity pattern", "jpql"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/api-design",
+      "name": "API Design",
+      "source": "ecc",
+      "path": "skills/api-design/SKILL.md",
+      "domains": ["api-design"],
+      "description": "REST API patterns, pagination, versioning",
+      "triggers": ["rest pattern", "api pagination", "api versioning"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/backend-patterns",
+      "name": "Backend Patterns",
+      "source": "ecc",
+      "path": "skills/backend-patterns/SKILL.md",
+      "domains": ["backend-patterns"],
+      "description": "Node/Express/Next.js server patterns",
+      "triggers": ["express pattern", "node pattern", "backend architecture"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/frontend-patterns",
+      "name": "Frontend Patterns",
+      "source": "ecc",
+      "path": "skills/frontend-patterns/SKILL.md",
+      "domains": ["frontend-patterns"],
+      "description": "React/Next.js state and performance",
+      "triggers": ["react pattern", "nextjs pattern", "state pattern"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/coding-standards",
+      "name": "Coding Standards",
+      "source": "ecc",
+      "path": "skills/coding-standards/SKILL.md",
+      "domains": ["coding-standards"],
+      "description": "Universal TS/JS/React standards",
+      "triggers": ["typescript standard", "javascript convention", "ts best practice"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/docker-patterns",
+      "name": "Docker Patterns",
+      "source": "ecc",
+      "path": "skills/docker-patterns/SKILL.md",
+      "domains": ["docker"],
+      "description": "Docker Compose, container security, networking",
+      "triggers": ["docker compose", "container pattern", "docker network"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/postgres-patterns",
+      "name": "Postgres Patterns",
+      "source": "ecc",
+      "path": "skills/postgres-patterns/SKILL.md",
+      "domains": ["database"],
+      "description": "PostgreSQL query optimization and schema design",
+      "triggers": ["postgres", "postgresql", "pg query", "schema design"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/database-migrations",
+      "name": "Database Migrations",
+      "source": "ecc",
+      "path": "skills/database-migrations/SKILL.md",
+      "domains": ["database"],
+      "description": "Zero-downtime schema migrations",
+      "triggers": ["migration", "schema change", "zero downtime", "migrate"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/clickhouse",
+      "name": "ClickHouse",
+      "source": "ecc",
+      "path": "skills/clickhouse-io/SKILL.md",
+      "domains": ["database"],
+      "description": "ClickHouse analytics patterns",
+      "triggers": ["clickhouse", "olap", "analytics database", "columnar"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/article-writing",
+      "name": "Article Writing",
+      "source": "ecc",
+      "path": "skills/article-writing/SKILL.md",
+      "domains": ["content-business"],
+      "description": "Long-form content in distinctive voice",
+      "triggers": ["article", "blog post", "long form", "writing guide"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/content-engine",
+      "name": "Content Engine",
+      "source": "ecc",
+      "path": "skills/content-engine/SKILL.md",
+      "domains": ["content-business"],
+      "description": "Multi-platform content systems",
+      "triggers": ["content system", "multi platform", "content calendar", "repurpose"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/investor-materials",
+      "name": "Investor Materials",
+      "source": "ecc",
+      "path": "skills/investor-materials/SKILL.md",
+      "domains": ["content-business"],
+      "description": "Pitch decks, memos, financial models",
+      "triggers": ["pitch deck", "investor memo", "financial model", "fundraising"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/investor-outreach",
+      "name": "Investor Outreach",
+      "source": "ecc",
+      "path": "skills/investor-outreach/SKILL.md",
+      "domains": ["content-business"],
+      "description": "Cold emails, intros, follow-ups",
+      "triggers": ["cold email", "investor intro", "follow up", "outreach"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/market-research",
+      "name": "Market Research",
+      "source": "ecc",
+      "path": "skills/market-research/SKILL.md",
+      "domains": ["content-business"],
+      "description": "Competitive analysis and due diligence",
+      "triggers": ["market research", "competitive analysis", "due diligence", "market size"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/frontend-slides",
+      "name": "Frontend Slides",
+      "source": "ecc",
+      "path": "skills/frontend-slides/SKILL.md",
+      "domains": ["content-business"],
+      "description": "Animation-rich HTML presentations",
+      "triggers": ["presentation", "slides", "html slides", "pitch presentation"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/agentic-engineering",
+      "name": "Agentic Engineering",
+      "source": "ecc",
+      "path": "skills/agentic-engineering/SKILL.md",
+      "domains": ["agent-engineering"],
+      "description": "Eval-first agent execution",
+      "triggers": ["eval first", "agentic", "agent evaluation"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/agent-harness",
+      "name": "Agent Harness",
+      "source": "ecc",
+      "path": "skills/agent-harness-construction/SKILL.md",
+      "domains": ["agent-engineering"],
+      "description": "Agent action space design",
+      "triggers": ["action space", "tool definition", "agent harness"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/eval-harness",
+      "name": "Eval Harness",
+      "source": "ecc",
+      "path": "skills/eval-harness/SKILL.md",
+      "domains": ["agent-engineering"],
+      "description": "Eval-driven development framework",
+      "triggers": ["eval harness", "eval driven", "evaluation framework"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/cost-aware-llm",
+      "name": "Cost-Aware LLM",
+      "source": "ecc",
+      "path": "skills/cost-aware-llm-pipeline/SKILL.md",
+      "domains": ["agent-engineering"],
+      "description": "LLM cost optimization and routing",
+      "triggers": ["llm cost", "model routing", "budget tracking", "cost optimize"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/continuous-agent-loop",
+      "name": "Continuous Agent Loop",
+      "source": "ecc",
+      "path": "skills/continuous-agent-loop/SKILL.md",
+      "domains": ["agent-orchestration"],
+      "description": "Quality gates and recovery controls",
+      "triggers": ["continuous loop", "quality gate", "recovery control"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/strategic-compact",
+      "name": "Strategic Compact",
+      "source": "ecc",
+      "path": "skills/strategic-compact/SKILL.md",
+      "domains": ["meta"],
+      "description": "Manual context compaction at logical intervals",
+      "triggers": ["compaction", "context window", "compact context"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/continuous-learning",
+      "name": "Continuous Learning",
+      "source": "ecc",
+      "path": "skills/continuous-learning/SKILL.md",
+      "domains": ["meta"],
+      "description": "Extract reusable patterns from sessions",
+      "triggers": ["learning capture", "pattern extract", "session learning"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/continuous-learning-v2",
+      "name": "Continuous Learning v2",
+      "source": "ecc",
+      "path": "skills/continuous-learning-v2/SKILL.md",
+      "domains": ["meta"],
+      "description": "Instinct-based learning with confidence scoring",
+      "triggers": ["instinct", "confidence scoring", "learning v2"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ecc/search-first",
+      "name": "Search First",
+      "source": "ecc",
+      "path": "skills/search-first/SKILL.md",
+      "domains": ["meta"],
+      "description": "Research-before-coding workflow",
+      "triggers": ["search first", "research before coding", "existing solution"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/test-driven-development",
+      "name": "Test-Driven Development",
+      "source": "superpowers",
+      "path": "skills/test-driven-development/SKILL.md",
+      "domains": ["tdd"],
+      "description": "Superpowers TDD methodology",
+      "triggers": ["test driven", "superpowers tdd", "write tests first"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/writing-plans",
+      "name": "Writing Plans",
+      "source": "superpowers",
+      "path": "skills/writing-plans/SKILL.md",
+      "domains": ["planning"],
+      "description": "Multi-step implementation planning",
+      "triggers": ["write plan", "implementation steps", "plan document"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/executing-plans",
+      "name": "Executing Plans",
+      "source": "superpowers",
+      "path": "skills/executing-plans/SKILL.md",
+      "domains": ["planning"],
+      "description": "Plan execution with review checkpoints",
+      "triggers": ["execute plan", "plan execution", "checkpoint review"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/requesting-code-review",
+      "name": "Requesting Code Review",
+      "source": "superpowers",
+      "path": "skills/requesting-code-review/SKILL.md",
+      "domains": ["code-review"],
+      "description": "How to request reviews effectively",
+      "triggers": ["request review", "review request", "pre-merge review"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/receiving-code-review",
+      "name": "Receiving Code Review",
+      "source": "superpowers",
+      "path": "skills/receiving-code-review/SKILL.md",
+      "domains": ["code-review"],
+      "description": "Technical rigor when receiving feedback",
+      "triggers": ["receive feedback", "review response", "address comments"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/systematic-debugging",
+      "name": "Systematic Debugging",
+      "source": "superpowers",
+      "path": "skills/systematic-debugging/SKILL.md",
+      "domains": ["debugging"],
+      "description": "Step-by-step debugging methodology",
+      "triggers": ["systematic debug", "root cause", "bisect", "isolate bug"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/verification-before-completion",
+      "name": "Verification Before Completion",
+      "source": "superpowers",
+      "path": "skills/verification-before-completion/SKILL.md",
+      "domains": ["verification"],
+      "description": "Evidence before assertions",
+      "triggers": ["verify before done", "evidence first", "prove it works"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/brainstorming",
+      "name": "Brainstorming",
+      "source": "superpowers",
+      "path": "skills/brainstorming/SKILL.md",
+      "domains": ["brainstorming"],
+      "description": "Structured brainstorming before creative work",
+      "triggers": ["structured brainstorm", "creative exploration", "divergent thinking"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/dispatching-parallel-agents",
+      "name": "Dispatching Parallel Agents",
+      "source": "superpowers",
+      "path": "skills/dispatching-parallel-agents/SKILL.md",
+      "domains": ["agent-orchestration"],
+      "description": "Fan-out/fan-in agent dispatch",
+      "triggers": ["fan out", "parallel dispatch", "concurrent agents"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/subagent-driven-development",
+      "name": "Subagent-Driven Development",
+      "source": "superpowers",
+      "path": "skills/subagent-driven-development/SKILL.md",
+      "domains": ["agent-orchestration"],
+      "description": "Independent task execution via subagents",
+      "triggers": ["subagent", "task delegation", "independent execution"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/using-git-worktrees",
+      "name": "Git Worktrees",
+      "source": "superpowers",
+      "path": "skills/using-git-worktrees/SKILL.md",
+      "domains": ["git-workflow"],
+      "description": "Isolated git worktree workflow",
+      "triggers": ["worktree", "git worktree", "isolated branch"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/finishing-branch",
+      "name": "Finishing a Branch",
+      "source": "superpowers",
+      "path": "skills/finishing-a-development-branch/SKILL.md",
+      "domains": ["git-workflow"],
+      "description": "Branch cleanup, merge, PR options",
+      "triggers": ["finish branch", "merge branch", "branch cleanup", "create pr"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/using-superpowers",
+      "name": "Using Superpowers",
+      "source": "superpowers",
+      "path": "skills/using-superpowers/SKILL.md",
+      "domains": ["meta"],
+      "description": "How to find and invoke skills",
+      "triggers": ["find skill", "invoke skill", "skill discovery"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "superpowers/writing-skills",
+      "name": "Writing Skills",
+      "source": "superpowers",
+      "path": "skills/writing-skills/SKILL.md",
+      "domains": ["meta"],
+      "description": "How to author and deploy skills",
+      "triggers": ["write skill", "author skill", "skill template"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "gstack/plan-review",
+      "name": "/plan + Review",
+      "source": "gstack",
+      "path": "plan-ceo-review/SKILL.md",
+      "domains": ["planning"],
+      "description": "CEO/eng/design plan review workflow",
+      "triggers": ["ceo review", "plan review", "stakeholder review"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "gstack/review",
+      "name": "/review",
+      "source": "gstack",
+      "path": "review/SKILL.md",
+      "domains": ["code-review"],
+      "description": "Code review slash command",
+      "triggers": ["review command", "review slash"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "gstack/investigate",
+      "name": "/investigate",
+      "source": "gstack",
+      "path": "investigate/SKILL.md",
+      "domains": ["debugging"],
+      "description": "Investigation workflow for bugs",
+      "triggers": ["investigate bug", "root cause analysis", "incident investigation"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "gstack/office-hours",
+      "name": "/office-hours",
+      "source": "gstack",
+      "path": "office-hours/SKILL.md",
+      "domains": ["brainstorming"],
+      "description": "Collaborative brainstorming sessions",
+      "triggers": ["office hours", "collaborative session", "pair brainstorm"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "gstack/guard",
+      "name": "/guard",
+      "source": "gstack",
+      "path": "guard/SKILL.md",
+      "domains": ["security"],
+      "description": "Security guardrail enforcement",
+      "triggers": ["guardrail", "security guard", "enforce policy"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "gstack/ship",
+      "name": "/ship",
+      "source": "gstack",
+      "path": "ship/SKILL.md",
+      "domains": ["shipping"],
+      "description": "Ship-it workflow",
+      "triggers": ["ship it", "release workflow", "go live"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "gstack/qa",
+      "name": "/qa",
+      "source": "gstack",
+      "path": "qa/SKILL.md",
+      "domains": ["tdd"],
+      "description": "QA testing workflow",
+      "triggers": ["qa test", "quality assurance", "manual test"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "gstack/browse",
+      "name": "/browse",
+      "source": "gstack",
+      "path": "browse/SKILL.md",
+      "domains": ["meta"],
+      "description": "Browser-based exploration",
+      "triggers": ["browse", "web explore", "browser tool"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "anthropics/frontend-design",
+      "name": "Frontend Design",
+      "source": "anthropics",
+      "path": "skills/frontend-design/SKILL.md",
+      "domains": ["frontend-design"],
+      "description": "Anthropic official frontend design skill",
+      "triggers": ["anthropic design", "official frontend", "design skill"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "anthropics/claude-api",
+      "name": "Claude API",
+      "source": "anthropics",
+      "path": "claude-api/SKILL.md",
+      "domains": ["agent-engineering"],
+      "description": "Build apps with Claude API/SDK",
+      "triggers": ["claude api", "anthropic sdk", "claude sdk"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "taste-skill/taste",
+      "name": "Design Taste",
+      "source": "taste-skill",
+      "path": "SKILL.md",
+      "domains": ["frontend-design"],
+      "description": "High-agency anti-slop design engineering",
+      "triggers": ["design taste", "anti slop", "design quality"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "bencium/ux-designer",
+      "name": "Bencium UX Designer",
+      "source": "bencium",
+      "path": "skills/bencium-controlled-ux-designer/SKILL.md",
+      "domains": ["frontend-design"],
+      "description": "WCAG 2.1 AA systematic UX methodology",
+      "triggers": ["wcag", "accessibility", "a11y", "ux methodology"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "frontend-design-pro/fdp",
+      "name": "Frontend Design Pro",
+      "source": "frontend-design-pro",
+      "path": "skills/frontend-design-pro/SKILL.md",
+      "domains": ["frontend-design"],
+      "description": "11 aesthetics + real photo matching",
+      "triggers": ["design pro", "aesthetic", "photo matching", "visual design"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "ui-ux-pro-max/uupm",
+      "name": "UI/UX Pro Max",
+      "source": "ui-ux-pro-max",
+      "path": "skills/ui-ux-pro-max/SKILL.md",
+      "domains": ["frontend-design"],
+      "description": "Cross-platform UI/UX intelligence",
+      "triggers": ["cross platform", "ui intelligence", "ux pro"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "design-skillstack/threejs",
+      "name": "Three.js WebGL",
+      "source": "design-skillstack",
+      "path": "plugins/bundles/core-3d-animation/skills/threejs-webgl/SKILL.md",
+      "domains": ["3d-animation"],
+      "description": "Three.js 3D web development",
+      "triggers": ["three.js", "threejs", "webgl scene", "3d web"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "design-skillstack/gsap",
+      "name": "GSAP ScrollTrigger",
+      "source": "design-skillstack",
+      "path": "plugins/bundles/core-3d-animation/skills/gsap-scrolltrigger/SKILL.md",
+      "domains": ["3d-animation"],
+      "description": "GSAP animation and scroll triggers",
+      "triggers": ["gsap", "scrolltrigger", "scroll animation", "timeline"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "design-skillstack/r3f",
+      "name": "React Three Fiber",
+      "source": "design-skillstack",
+      "path": ".claude/skills/react-three-fiber/SKILL.md",
+      "domains": ["3d-animation"],
+      "description": "Declarative 3D with React",
+      "triggers": ["react three fiber", "r3f", "declarative 3d"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "design-skillstack/framer-motion",
+      "name": "Framer Motion",
+      "source": "design-skillstack",
+      "path": "plugins/bundles/core-3d-animation/skills/motion-framer/SKILL.md",
+      "domains": ["3d-animation"],
+      "description": "React animation library",
+      "triggers": ["framer motion", "framer", "motion", "react animation"],
+      "version": "2026-03-25"
+    },
+    {
+      "id": "design-skillstack/babylonjs",
+      "name": "Babylon.js",
+      "source": "design-skillstack",
+      "path": "plugins/bundles/core-3d-animation/skills/babylonjs-engine/SKILL.md",
+      "domains": ["3d-animation"],
+      "description": "Babylon.js 3D engine",
+      "triggers": ["babylonjs", "babylon.js", "3d engine"],
+      "version": "2026-03-25"
+    }
+  ],
+  "profiles": [
+    {
+      "name": "ecc-first",
+      "description": "ECC wins all collisions, Superpowers fills unique gaps (debugging, brainstorming, git)",
+      "resolutions": [
+        { "domain_id": "tdd", "chosen_skill_id": "ecc/tdd-workflow" },
+        { "domain_id": "planning", "chosen_skill_id": "ecc/plan" },
+        { "domain_id": "code-review", "chosen_skill_id": "ecc/go-review" },
+        { "domain_id": "verification", "chosen_skill_id": "ecc/verification-loop" },
+        { "domain_id": "agent-orchestration", "chosen_skill_id": "ecc/autonomous-loops" },
+        { "domain_id": "security", "chosen_skill_id": "ecc/security-review" },
+        { "domain_id": "shipping", "chosen_skill_id": "ecc/deployment-patterns" },
+        { "domain_id": "debugging", "chosen_skill_id": "superpowers/systematic-debugging" },
+        { "domain_id": "brainstorming", "chosen_skill_id": "superpowers/brainstorming" },
+        { "domain_id": "frontend-design", "chosen_skill_id": "anthropics/frontend-design" }
+      ]
+    },
+    {
+      "name": "superpowers-first",
+      "description": "Superpowers methodology wins, ECC for language-specific and security",
+      "resolutions": [
+        { "domain_id": "tdd", "chosen_skill_id": "superpowers/test-driven-development" },
+        { "domain_id": "planning", "chosen_skill_id": "superpowers/writing-plans" },
+        { "domain_id": "code-review", "chosen_skill_id": "superpowers/requesting-code-review" },
+        { "domain_id": "debugging", "chosen_skill_id": "superpowers/systematic-debugging" },
+        { "domain_id": "verification", "chosen_skill_id": "superpowers/verification-before-completion" },
+        { "domain_id": "brainstorming", "chosen_skill_id": "superpowers/brainstorming" },
+        { "domain_id": "agent-orchestration", "chosen_skill_id": "superpowers/dispatching-parallel-agents" },
+        { "domain_id": "security", "chosen_skill_id": "ecc/security-review" },
+        { "domain_id": "shipping", "chosen_skill_id": "ecc/deployment-patterns" },
+        { "domain_id": "frontend-design", "chosen_skill_id": "taste-skill/taste" }
+      ]
+    },
+    {
+      "name": "minimal",
+      "description": "Smallest token footprint — one skill per colliding domain, no extras",
+      "resolutions": [
+        { "domain_id": "tdd", "chosen_skill_id": "superpowers/test-driven-development" },
+        { "domain_id": "planning", "chosen_skill_id": "superpowers/writing-plans" },
+        { "domain_id": "code-review", "chosen_skill_id": "superpowers/requesting-code-review" },
+        { "domain_id": "debugging", "chosen_skill_id": "superpowers/systematic-debugging" },
+        { "domain_id": "verification", "chosen_skill_id": "superpowers/verification-before-completion" },
+        { "domain_id": "brainstorming", "chosen_skill_id": "superpowers/brainstorming" },
+        { "domain_id": "agent-orchestration", "chosen_skill_id": "superpowers/dispatching-parallel-agents" },
+        { "domain_id": "security", "chosen_skill_id": "ecc/security-review" },
+        { "domain_id": "shipping", "chosen_skill_id": "gstack/ship" },
+        { "domain_id": "frontend-design", "chosen_skill_id": "taste-skill/taste" }
+      ]
+    }
+  ]
+}

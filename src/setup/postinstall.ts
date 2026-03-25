@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 try {
   const { detectClients } = await import("./detect.js");
   const { prefetchCoreSkills, PREFETCH_SKILL_IDS } = await import("../lib/skill-cache.js");

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 /**
  * Skill cache — local disk cache for fetched skill content.
@@ -10,7 +10,7 @@ import { readFile, writeFile, mkdir, rename, readdir } from "fs/promises";
 import { resolve, dirname, join } from "path";
 import { homedir, tmpdir } from "os";
 import { randomBytes } from "crypto";
-import { CATALOG } from "../commands/skill/catalog.js";
+import { getCatalog } from "../commands/skill/catalog.js";
 import type { CatalogSkill } from "../commands/skill/catalog.js";
 
 // ── Configuration ────────────────────────────────────
@@ -91,7 +91,7 @@ export async function prefetchCoreSkills(options?: {
 
   // Resolve skill IDs to catalog entries
   const skills = PREFETCH_SKILL_IDS
-    .map((id) => CATALOG.find((s) => s.id === id))
+    .map((id) => getCatalog().find((s) => s.id === id))
     .filter((s): s is CatalogSkill => s !== undefined);
 
   // Process in batches for bounded concurrency

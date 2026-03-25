@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 export interface DetectedTool {
   tool: 'claude-code' | 'opencode' | 'cursor' | 'codex' | 'gemini-cli' | 'unknown';
   model?: string;

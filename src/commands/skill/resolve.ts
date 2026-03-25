@@ -1,11 +1,11 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import {
-  CATALOG,
-  DOMAINS,
+  getCatalog,
+  getDomains,
   detectCollisions,
   searchCatalog,
   getProfile,
-  BUILT_IN_PROFILES,
+  getBuiltInProfiles,
 } from "./catalog.js";
 
 // ── Result Types ─────────────────────────────────────
@@ -72,7 +72,7 @@ export async function catalogCommand(options: {
     domains: Array.from(domainSkills.entries())
       .map(([id, skills]) => ({
         id,
-        name: DOMAINS.find((d) => d.id === id)?.name ?? id,
+        name: getDomains().find((d) => d.id === id)?.name ?? id,
         skill_count: skills.size,
       }))
       .sort((a, b) => b.skill_count - a.skill_count),
@@ -110,7 +110,7 @@ export async function resolveCommand(options: {
   const profile = getProfile(profileName);
 
   if (!profile) {
-    const available = BUILT_IN_PROFILES.map((p) => p.name).join(", ");
+    const available = getBuiltInProfiles().map((p) => p.name).join(", ");
     return {
       success: false,
       profile_name: profileName,
@@ -144,7 +144,7 @@ export async function resolveCommand(options: {
   }
 
   // Add non-colliding skills (domains with only one repo)
-  for (const skill of CATALOG) {
+  for (const skill of getCatalog()) {
     const allDomainsNonColliding = skill.domains.every((d) => !collisionDomainIds.has(d));
     if (allDomainsNonColliding) {
       activeSkillIds.add(skill.id);

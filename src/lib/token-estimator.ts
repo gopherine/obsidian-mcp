@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Rough token estimation using chars/4 heuristic with a 15% safety margin.
  *

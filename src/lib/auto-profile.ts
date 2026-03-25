@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { detectStack } from "./stack-detector.js";
 import { detectTool } from "./tool-detector.js";
 import type { DetectedStack } from "./stack-detector.js";

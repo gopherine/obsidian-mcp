@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { searchGitHubForSkills, fetchDiscoveredSkill, formatDiscoveryResults, scanForPromptInjection, clearDiscoveryCache, normalizeCacheKey, _setCacheFilePath, _resetCacheFilePath } from "./web-discovery.js";
 import type { DiscoveredSkill, DiscoveryCache } from "./web-discovery.js";

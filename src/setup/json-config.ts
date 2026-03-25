@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { readFileSync, writeFileSync, existsSync, copyFileSync, mkdirSync } from "fs";
 import { dirname } from "path";
 

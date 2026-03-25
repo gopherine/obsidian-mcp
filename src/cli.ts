@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Command } from "commander";
 import { loadConfig } from "./config.js";
@@ -25,6 +25,8 @@ import { registerSetupCommands } from "./setup/index.js";
 import { skillCommand } from "./commands/skill/index.js";
 import { generateManifest, loadSkillContent, activateSkills } from "./commands/skill/marketplace.js";
 import { autoDetect, getRelevantDomains } from "./lib/auto-profile.js";
+import { loadRegistry } from "./lib/registry-loader.js";
+import { setRegistryData } from "./commands/skill/catalog.js";
 
 let _config: Config | null = null;
 let _vaultFs: VaultFS | null = null;
@@ -1164,6 +1166,8 @@ skillCmd
 // ── setup / teardown ─────────────────────────────────
 registerSetupCommands(program);
 
+// Load registry before parsing (non-blocking — fallbacks used if it fails)
+loadRegistry().then((r) => setRegistryData(r)).catch(() => {});
 program.parse();
 
 process.on("unhandledRejection", (reason) => {

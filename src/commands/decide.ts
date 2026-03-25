@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { CommandContext } from "../core/types.js";
 import { serializeFrontmatter, createFrontmatter } from "../lib/frontmatter.js";
 import { resolveProject } from "../config.js";
