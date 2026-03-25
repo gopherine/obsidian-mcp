@@ -919,6 +919,84 @@ skillCmd
     }
   });
 
+// ── skills.sh integration ────────────────────────────
+skillCmd
+  .command("add <source>")
+  .description("Install skills from a GitHub repo (owner/repo)")
+  .option("-s, --select <names>", "Install specific skills (comma-separated)")
+  .action(async (source: string, opts: { select?: string }) => {
+    const { installSkills: doInstall } = await import("./lib/skill-installer.js");
+    const selectSkills = opts.select?.split(",").map((s) => s.trim());
+    console.log(`Installing skills from ${source}...`);
+    const result = await doInstall(source, { selectSkills });
+    if (result.success) {
+      console.log(`Installed ${result.installed.length} skill(s):`);
+      for (const name of result.installed) console.log(`  + ${name}`);
+    } else {
+      console.error("Installation failed:");
+      for (const err of result.errors) console.error(`  ${err}`);
+      process.exit(1);
+    }
+    if (result.errors.length > 0 && result.installed.length > 0) {
+      console.warn("Warnings:");
+      for (const err of result.errors) console.warn(`  ${err}`);
+    }
+  });
+
+skillCmd
+  .command("remove <name>")
+  .description("Remove an installed skill")
+  .action(async (name: string) => {
+    const { removeSkill: doRemove } = await import("./lib/skill-installer.js");
+    const result = await doRemove(name);
+    if (result.success) {
+      console.log(`Removed: ${name}`);
+    } else {
+      console.error(result.error);
+      process.exit(1);
+    }
+  });
+
+skillCmd
+  .command("installed")
+  .description("List skills installed from GitHub repos")
+  .action(async () => {
+    const { listInstalledSkills: doList } = await import("./lib/skill-installer.js");
+    const skills = await doList();
+    if (skills.length === 0) {
+      console.log("No skills installed. Try: superskill-cli skill add anthropics/skills");
+      return;
+    }
+    console.log(`\n  ${skills.length} installed skill(s):\n`);
+    for (const s of skills) {
+      console.log(`  ${s.name} — ${s.description.slice(0, 80)}`);
+    }
+  });
+
+skillCmd
+  .command("find <query>")
+  .description("Search skills.sh for skills to install")
+  .action(async (query: string) => {
+    const { searchGitHubCode } = await import("./lib/github-client.js");
+    const { buildSearchQuery, extractKeywords } = await import("./lib/text-utils.js");
+    const keywords = extractKeywords(query);
+    if (keywords.length === 0) {
+      console.error("Could not extract search keywords from query");
+      process.exit(1);
+    }
+    console.log(`Searching for "${query}"...\n`);
+    const results = await searchGitHubCode(buildSearchQuery(keywords));
+    if (results.length === 0) {
+      console.log("No skills found. Try different keywords.");
+      return;
+    }
+    for (const r of results) {
+      console.log(`  ${r.name} — ${r.description}`);
+      console.log(`    ${r.repo} · ${r.stars} stars`);
+      console.log(`    Install: superskill-cli skill add ${r.repo}\n`);
+    }
+  });
+
 // ── skill marketplace ────────────────────────────────
 skillCmd
   .command("catalog")
