@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-25
+
+### Added
+- **Central skill registry** — Runtime JSON registry at `registry/index.json` replaces hardcoded TypeScript catalog. 87 skills, 28 domains, 9 sources, 3 profiles. Adding a new skill is now a JSON edit, not a code change. (#2, #17)
+- **Trigger-based skill matching** — Keyword scoring with lightweight stemming replaces regex-based `TASK_DOMAIN_MAP`. All 28 domains now discoverable by LLMs via dynamic tool description. Fixes "UX design" tasks returning "No matching superskill". (#4)
+- **Session-aware skill memory** — In-process cache remembers activated skills so repeat calls with similar tasks return instantly without re-fetching. (#5)
+- **Registry loader** — `registry-loader.ts` loads registry from user override (`~/.superskill/registry/index.json`) or bundled fallback. Schema validation, memory caching.
+
+### Changed
+- **web-discovery.ts refactored** — 438-line mixed-concern file decomposed into 4 focused modules: `text-utils.ts`, `url-utils.ts`, `security-scanner.ts`, `github-client.ts`
+- **catalog.ts rewritten** — Now a facade over the registry with getter functions (`getCatalog()`, `getDomains()`, `getDomainPriority()`). Static exports kept as fallbacks for backward compatibility.
+- **Tool description dynamic** — `superskill` MCP tool description now lists all 28 domain names so LLMs know the full capability surface
+- **License simplified** — AGPL-3.0-or-later only, removed commercial dual-license
+
+### Testing
+- 832 tests across 57 files, 90%+ coverage on all new code
+- 20 regression tests ensuring TASK_DOMAIN_MAP parity with trigger scoring
+- Registry data integrity tests (valid sources, domains, triggers, profiles)
+
 ## [0.2.7] - 2026-03-23
 
 ### Added
