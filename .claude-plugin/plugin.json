@@ -1,6 +1,6 @@
 {
   "name": "superskill",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Universal skill marketplace + knowledge vault for AI coding agents. Auto-detects your stack, loads expert methodologies (TDD, brainstorming, code review, debugging, security, etc.) on demand.",
   "author": {
     "name": "Permanu (Atharva Pandey)",
