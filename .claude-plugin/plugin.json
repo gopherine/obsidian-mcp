@@ -1,12 +1,12 @@
 {
   "name": "superskill",
-  "version": "0.3.0",
-  "description": "Universal skill marketplace + knowledge vault for AI coding agents. Auto-detects your stack, loads expert methodologies (TDD, brainstorming, code review, debugging, security, etc.) on demand.",
+  "version": "0.4.0",
+  "description": "Runtime intelligence layer for AI agent skills — smart routing, collision resolution, and knowledge vault. Works with skills.sh and any installed SKILL.md files.",
   "author": {
     "name": "Permanu (Atharva Pandey)",
     "url": "https://permanu.com"
   },
   "repository": "https://github.com/permanu/superskill",
   "license": "AGPL-3.0-or-later",
-  "keywords": ["skills", "marketplace", "knowledge-base", "context", "vault", "tdd", "brainstorming", "code-review", "multi-tool"]
+  "keywords": ["skills", "routing", "knowledge-base", "context", "vault", "skills-sh", "agent-skills", "multi-tool"]
 }

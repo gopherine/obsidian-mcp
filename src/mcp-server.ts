@@ -22,8 +22,9 @@ import { taskCommand } from "./commands/task.js";
 import { searchText, searchStructured } from "./lib/search-engine.js";
 import { formatResumeContext } from "./commands/resume.js";
 import { getSkillAwarenessBlock } from "./commands/skill/marketplace.js";
-import { loadRegistry } from "./lib/registry-loader.js";
+import { loadRegistry, mergeLocalSkills } from "./lib/registry-loader.js";
 import { setRegistryData } from "./commands/skill/catalog.js";
+import { scanInstalledSkills, scannedSkillsToRegistryFormat } from "./lib/skill-scanner.js";
 
 const registry = createRegistry();
 
@@ -59,7 +60,7 @@ function createCtx(): CommandContext {
 }
 
 const server = new Server(
-  { name: "superskill", version: "0.3.0" },
+  { name: "superskill", version: "0.4.0" },
   { capabilities: { tools: {}, resources: {}, prompts: {} } }
 );
 
@@ -412,9 +413,17 @@ function getTimeAgo(isoDate: string): string {
 // ── Start ─────────────────────────────────────────────
 
 async function main() {
-  // Load the skill registry before starting the server
+  // Load the skill registry and scan installed skills
   try {
-    const registry = await loadRegistry();
+    let registry = await loadRegistry();
+
+    // Scan locally installed skills (from skills.sh / npx skills add)
+    const scanned = await scanInstalledSkills();
+    if (scanned.skills.length > 0) {
+      const localSkills = scannedSkillsToRegistryFormat(scanned.skills);
+      registry = mergeLocalSkills(registry, localSkills);
+    }
+
     setRegistryData(registry);
   } catch {
     // Non-fatal: catalog.ts fallbacks will be used

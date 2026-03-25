@@ -8,6 +8,7 @@ import {
   getRegistry,
   getSkillSourceUrl,
   getDomainSummary,
+  mergeLocalSkills,
   _clearRegistry,
   _setUserRegistryPath,
   _resetUserRegistryPath,
@@ -225,6 +226,65 @@ describe("registry-loader", () => {
       const registry = await loadRegistry();
       const ids = registry.skills.map((s) => s.id);
       expect(new Set(ids).size).toBe(ids.length);
+    });
+  });
+
+  describe("mergeLocalSkills", () => {
+    it("adds local skills to registry", async () => {
+      const userFile = join(testDir, "registry.json");
+      await writeFile(userFile, JSON.stringify(MINIMAL_REGISTRY), "utf-8");
+      _setUserRegistryPath(userFile);
+      const registry = await loadRegistry();
+
+      const localSkills = [{
+        id: "local/my-skill",
+        name: "My Skill",
+        source: "local",
+        path: "/tmp/SKILL.md",
+        domains: [] as string[],
+        description: "A local skill",
+        triggers: ["my", "skill"],
+        version: "local",
+      }];
+
+      const merged = mergeLocalSkills(registry, localSkills);
+      expect(merged.skills.length).toBe(registry.skills.length + 1);
+      expect(merged.skills.find((s) => s.id === "local/my-skill")).toBeDefined();
+      expect(merged.sources.local).toBeDefined();
+    });
+
+    it("does not duplicate existing skills", async () => {
+      const userFile = join(testDir, "registry.json");
+      await writeFile(userFile, JSON.stringify(MINIMAL_REGISTRY), "utf-8");
+      _setUserRegistryPath(userFile);
+      const registry = await loadRegistry();
+
+      // Try to add a skill with the same ID as existing
+      const localSkills = [{
+        id: MINIMAL_REGISTRY.skills[0].id,
+        name: "Duplicate",
+        source: "local",
+        path: "/tmp/SKILL.md",
+        domains: [] as string[],
+        description: "Duplicate",
+        triggers: ["dup"],
+        version: "local",
+      }];
+
+      const merged = mergeLocalSkills(registry, localSkills);
+      expect(merged.skills.length).toBe(registry.skills.length);
+    });
+
+    it("preserves original registry data", async () => {
+      const userFile = join(testDir, "registry.json");
+      await writeFile(userFile, JSON.stringify(MINIMAL_REGISTRY), "utf-8");
+      _setUserRegistryPath(userFile);
+      const registry = await loadRegistry();
+
+      const merged = mergeLocalSkills(registry, []);
+      expect(merged.domains).toEqual(registry.domains);
+      expect(merged.profiles).toEqual(registry.profiles);
+      expect(merged.registry_version).toBe(registry.registry_version);
     });
   });
 });

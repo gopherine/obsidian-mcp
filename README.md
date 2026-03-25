@@ -1,34 +1,83 @@
 # SuperSkill
 
-One plugin, every skill. The package manager for AI coding agents.
+The runtime intelligence layer for AI agent skills.
 
 [![npm](https://img.shields.io/npm/v/superskill)](https://www.npmjs.com/package/superskill)
 [![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](https://www.gnu.org/licenses/agpl-3.0)
-[![skills](https://img.shields.io/badge/skills-87-purple)](https://github.com/permanu/superskill)
+[![skills](https://img.shields.io/badge/built--in_skills-87-purple)](https://github.com/permanu/superskill)
 [![tools](https://img.shields.io/badge/AI%20tools-8-green)](https://github.com/permanu/superskill)
 
 ## The Problem
 
-There are 9+ open-source skill repos for AI coding agents, containing 87+ skills across 28 domains. Installing them all means token bloat and collisions — three different TDD skills fighting for context. Installing none means your agent wings it. There's no package manager.
+[skills.sh](https://skills.sh) solved skill discovery and installation — 90,000+ skills, 40+ agents, one standard. But installation is static. You browse, pick, install, and hope you chose right.
+
+When you have 15 skills installed and say "write tests for my Go API" — which one loads? What about the three competing TDD skills? What if the model's context window can't fit them all?
+
+**skills.sh is where you find skills. SuperSkill is what loads the right one at the right time.**
 
 ## How It Works
 
-1. **Install** — `npm install -g superskill`
+1. **Install skills however you want** — `npx skills add`, manual download, or use the 87 built-in skills
 2. **Describe your task** — "write tests for my Go API"
-3. **SuperSkill finds and loads the right methodology** — resolves collisions, filters by your stack, injects only what's relevant
+3. **SuperSkill scores, resolves, and loads** — trigger-based matching picks the best skill, resolves collisions, respects your context budget
 
-No manual skill management. The AI agent calls SuperSkill automatically when it recognizes a matching task.
+SuperSkill scans your installed skills (from `~/.claude/skills/`, `~/.cursor/skills/`, etc.), merges them with its built-in catalog, and routes tasks to the best match at runtime.
 
-## Key Features
+## What SuperSkill Adds
 
-- **87 skills from 9 repos** — ECC, Superpowers, gstack, Anthropic, design repos, and more. One catalog, one resolution layer.
-- **Works across 8 AI tools** — Claude Code, Claude Desktop, Cursor, Codex CLI, Gemini CLI, OpenCode, Crush CLI, Droid.
-- **Collision resolution** — When multiple repos provide skills for the same domain (TDD, planning, code review, etc.), profiles pick the winner.
-- **Stack-aware filtering** — Auto-detects your project (Go, React, Django, Spring Boot, etc.) and loads only relevant skills.
-- **Web discovery** — If no local skill matches, searches GitHub for community skills.
-- **Security scanning** — Community skills are scanned for prompt injection, data exfiltration, and destructive commands before loading.
-- **Progressive disclosure** — Lightweight manifest (~100 tokens/skill) for small-context models; full content on demand.
-- **Knowledge vault** — Persistent project memory: tasks, ADRs, learnings, session resume, brainstorms. Cross-tool, cross-session.
+| Layer | What it does | Why you need it |
+|-------|-------------|----------------|
+| **Router** | Task description → best matching skill | No manual browsing or memorizing skill names |
+| **Arbiter** | 3 TDD skills installed? Profile picks the winner | Prevents collision chaos and token waste |
+| **Scanner** | Discovers installed skills from any source | Works with skills.sh, manual installs, or built-in |
+| **Memory** | Remembers activations within a session | No redundant fetches for similar tasks |
+| **Vault** | ADRs, learnings, sessions, project context | Persistent knowledge that survives across sessions |
+
+## Quick Start
+
+### Claude Code Plugin (recommended)
+
+```bash
+/plugin marketplace add permanu/superskill
+/plugin install superskill
+```
+
+### Any MCP-compatible tool
+
+```bash
+npm install -g superskill
+```
+
+Then add as an MCP server:
+
+```bash
+# Claude Code
+claude mcp add superskill -e VAULT_PATH=~/Vaults/ai -- npx -y superskill
+
+# Cursor, Claude Desktop, Codex, Gemini CLI — add to MCP config:
+```
+
+```json
+{
+  "mcpServers": {
+    "superskill": {
+      "command": "npx",
+      "args": ["-y", "superskill"],
+      "env": { "VAULT_PATH": "~/Vaults/ai" }
+    }
+  }
+}
+```
+
+### Works with skills.sh
+
+Install skills from the ecosystem, SuperSkill routes to them automatically:
+
+```bash
+npx skills add anthropics/skills          # Anthropic's official skills
+npx skills add affaan-m/everything-claude-code  # ECC skill suite
+# SuperSkill discovers and scores these on next activation
+```
 
 ## Supported AI Tools
 
@@ -43,10 +92,10 @@ No manual skill management. The AI agent calls SuperSkill automatically when it 
 | **Crush CLI** | MCP config | Community |
 | **Droid** | MCP config | Community |
 
-## Available Skills
+## Built-in Skill Catalog
 
 <details>
-<summary>28 domains across 9 repos (click to expand)</summary>
+<summary>87 skills across 28 domains from 9 repos (click to expand)</summary>
 
 **Core Workflow** — loaded for every project:
 
@@ -96,52 +145,13 @@ No manual skill management. The AI agent calls SuperSkill automatically when it 
 | Agent Engineering | 4 | Agent harness, eval, cost optimization |
 | Meta/Tooling | 5 | Skill management, compaction, learning, browsing |
 
-**Source repos:** [ECC](https://github.com/affaan-m/everything-claude-code), [Superpowers](https://github.com/obra/superpowers), [gstack](https://github.com/garrytan/gstack), [Anthropic Skills](https://github.com/anthropics/skills), [Design Skillstack](https://github.com/freshtechbro/claudedesignskills), [Taste](https://github.com/Leonxlnx/taste-skill), [Bencium](https://github.com/bencium/bencium-claude-code-design-skill), [Frontend Design Pro](https://github.com/claudekit/frontend-design-pro-demo), [UI/UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
-
 </details>
-
-## Quick Start
-
-### Claude Code Plugin (recommended)
-
-```bash
-/plugin marketplace add permanu/superskill
-/plugin install superskill
-```
-
-### Any MCP-compatible tool
-
-```bash
-npm install -g superskill
-```
-
-Then configure as an MCP server. For Claude Code:
-
-```bash
-claude mcp add superskill -e VAULT_PATH=~/Vaults/ai -- npx -y superskill
-```
-
-For Cursor, Claude Desktop, Codex, Gemini CLI, and others — add to your MCP config:
-
-```json
-{
-  "mcpServers": {
-    "superskill": {
-      "command": "npx",
-      "args": ["-y", "superskill"],
-      "env": {
-        "VAULT_PATH": "~/Vaults/ai"
-      }
-    }
-  }
-}
-```
 
 ## MCP Tools
 
 | Tool | Description |
 |------|-------------|
-| `superskill` | Load expert methodology by domain, task description, or skill ID |
+| `superskill` | Route to the best skill by task description, domain, or skill ID |
 | `vault_skill` | Skill catalog, collisions, resolution, generation |
 | `vault_project_context` | Auto-detected project context from CWD |
 | `vault_init` | Generate draft context.md from a git repo |
@@ -176,7 +186,5 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 ## License
 
 AGPL-3.0-or-later — See [LICENSE](./LICENSE)
-
-Commercial license available for organizations with >$1M annual revenue. See [LICENSE-COMMERCIAL.md](./LICENSE-COMMERCIAL.md).
 
 Copyright 2026 Permanu (Atharva Pandey)

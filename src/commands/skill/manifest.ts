@@ -109,11 +109,18 @@ export async function loadSkillContent(skillId: string): Promise<{
 // ── Skill Awareness (for resume/context injection) ────
 
 export function getSkillAwarenessBlock(): string {
+  const catalog = getCatalog();
+  const sources = new Set(catalog.map(s => s.repo)).size;
+  const localCount = catalog.filter(s => s.repo === "local").length;
+  const totalLabel = localCount > 0
+    ? `${catalog.length} skills (${catalog.length - localCount} built-in + ${localCount} installed)`
+    : `${catalog.length}+ skills across ${sources} repos`;
+
   return [
     "",
-    "## SuperSkill — Expert Methodologies",
+    "## SuperSkill — Runtime Skill Router",
     "",
-    "You have **superskill** — your skill package manager. Call it whenever you're about to:",
+    "You have **superskill** — your runtime skill router. Call it whenever you're about to:",
     "",
     "- Write, review, test, or debug code",
     "- Plan, architect, or design something",
@@ -121,7 +128,7 @@ export function getSkillAwarenessBlock(): string {
     "- Research, write content, or prepare materials",
     "",
     "Just describe the task: `superskill({task: \"write tests for my Go API\"})`",
-    "SuperSkill finds the right methodology from " + getCatalog().length + "+ skills across " + new Set(getCatalog().map(s => s.repo)).size + " repos.",
+    `SuperSkill picks the best matching methodology from ${totalLabel}.`,
     "",
   ].join("\n");
 }

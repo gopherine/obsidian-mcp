@@ -169,3 +169,29 @@ export function getSkillSourceUrl(skill: RegistrySkill, registry: RegistryData):
 export function getDomainSummary(registry: RegistryData): string {
   return registry.domains.map((d) => d.name).join(", ");
 }
+
+/**
+ * Merge locally scanned skills into the registry.
+ * Local skills are added with source "local" and don't replace existing skills.
+ */
+export function mergeLocalSkills(
+  registry: RegistryData,
+  localSkills: RegistrySkill[],
+): RegistryData {
+  const existingIds = new Set(registry.skills.map((s) => s.id));
+
+  // Add "local" source if not present
+  const sources = { ...registry.sources };
+  if (!sources.local) {
+    sources.local = { repo: "local", base_url: "" };
+  }
+
+  // Only add skills that aren't already in the registry
+  const newSkills = localSkills.filter((s) => !existingIds.has(s.id));
+
+  return {
+    ...registry,
+    sources,
+    skills: [...registry.skills, ...newSkills],
+  };
+}

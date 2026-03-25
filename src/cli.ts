@@ -25,8 +25,9 @@ import { registerSetupCommands } from "./setup/index.js";
 import { skillCommand } from "./commands/skill/index.js";
 import { generateManifest, loadSkillContent, activateSkills } from "./commands/skill/marketplace.js";
 import { autoDetect, getRelevantDomains } from "./lib/auto-profile.js";
-import { loadRegistry } from "./lib/registry-loader.js";
+import { loadRegistry, mergeLocalSkills } from "./lib/registry-loader.js";
 import { setRegistryData } from "./commands/skill/catalog.js";
+import { scanInstalledSkills, scannedSkillsToRegistryFormat } from "./lib/skill-scanner.js";
 
 let _config: Config | null = null;
 let _vaultFs: VaultFS | null = null;
@@ -1166,8 +1167,20 @@ skillCmd
 // ── setup / teardown ─────────────────────────────────
 registerSetupCommands(program);
 
-// Load registry before parsing (non-blocking — fallbacks used if it fails)
-loadRegistry().then((r) => setRegistryData(r)).catch(() => {});
+// Load registry and scan installed skills before parsing
+(async () => {
+  try {
+    let registry = await loadRegistry();
+    const scanned = await scanInstalledSkills();
+    if (scanned.skills.length > 0) {
+      const localSkills = scannedSkillsToRegistryFormat(scanned.skills);
+      registry = mergeLocalSkills(registry, localSkills);
+    }
+    setRegistryData(registry);
+  } catch {
+    // Non-fatal
+  }
+})();
 program.parse();
 
 process.on("unhandledRejection", (reason) => {

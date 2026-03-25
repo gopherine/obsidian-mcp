@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-25
+
+### Added
+- **Skill scanner** — Discovers installed SKILL.md files from `~/.claude/skills/`, `~/.cursor/skills/`, and other standard directories. Works with skills installed via `npx skills add` (skills.sh ecosystem) or manual installation.
+- **Local skill merging** — Scanned local skills are merged into the registry at startup. Trigger matcher scores against both built-in and locally installed skills.
+
+### Changed
+- **Repositioned as runtime intelligence layer** — SuperSkill is no longer positioned as a package manager. It's the routing layer that sits on top of the Agent Skills ecosystem (skills.sh). "skills.sh is where you find skills. SuperSkill is what loads the right one at the right time."
+- **README rewritten** — New positioning, skills.sh integration documented, clearer value proposition
+- **Tool description updated** — "Runtime skill router" replaces "skill package manager"
+- **Skill awareness block** — Shows installed skill count when local skills are detected
+- **Package description** updated across package.json, plugin.json, MCP server
+
 ## [0.3.0] - 2026-03-25
 
 ### Added

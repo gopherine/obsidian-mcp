@@ -539,11 +539,11 @@ export function createRegistry(): CommandRegistry {
     }) as CommandHandler,
     toolDef: {
       name: "superskill",
-      description: `SuperSkill is your skill package manager — expert methodologies for any coding task, fetched on demand.
+      description: `SuperSkill is your runtime skill router — it picks the right methodology from your installed skills and loads it on demand.
 
-Covers: ${getDomains().map((d) => d.name).join(", ")}.
+Works with skills installed via \`npx skills add\` (skills.sh) or the built-in catalog. Covers: ${getDomains().map((d) => d.name).join(", ")}.
 
-Describe the task and SuperSkill finds the right methodology. Don't overthink domain selection — just describe what you need.`,
+Describe the task and SuperSkill finds the best matching skill. Don't overthink domain selection — just describe what you need.`,
       inputSchema: {
         type: "object" as const,
         properties: {

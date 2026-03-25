@@ -112,11 +112,10 @@ describe("matchTaskToDomains", () => {
 });
 
 describe("getSkillAwarenessBlock", () => {
-  it("does not hardcode domain list", () => {
+  it("uses runtime router branding", () => {
     const block = getSkillAwarenessBlock();
-    // Should use verb-led triggers, not domain taxonomy
     expect(block).toContain("Write, review, test, or debug");
-    expect(block).toContain("skill package manager");
+    expect(block).toContain("runtime skill router");
     // Should NOT list individual domains
     expect(block).not.toContain("- **brainstorming** —");
     expect(block).not.toContain("- **tdd** —");
@@ -124,7 +123,6 @@ describe("getSkillAwarenessBlock", () => {
 
   it("includes dynamic skill count", () => {
     const block = getSkillAwarenessBlock();
-    // Should include actual count from CATALOG, not hardcoded number
-    expect(block).toMatch(/\d+\+ skills across \d+ repos/);
+    expect(block).toMatch(/\d+.*skills/);
   });
 });
