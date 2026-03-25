@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getSkillBudget, fitSkillsToBudget } from "./context-budget.js";
 
@@ -87,12 +88,13 @@ describe("fitSkillsToBudget", () => {
     expect(result.usedTokens).toBe(0);
   });
 
-  it("skips a large skill but includes a later smaller one", () => {
+  it("excludes all remaining skills after first that does not fit", () => {
     const small = "a".repeat(100); // ~29 tokens
     const big = "a".repeat(40000); // ~11500 tokens
     const contents = [small, big, small];
     const result = fitSkillsToBudget(contents, 100);
-    expect(result.included).toEqual([0, 2]);
-    expect(result.excluded).toEqual([1]);
+    // big exceeds budget → big and all after it are excluded (priority order)
+    expect(result.included).toEqual([0]);
+    expect(result.excluded).toEqual([1, 2]);
   });
 });

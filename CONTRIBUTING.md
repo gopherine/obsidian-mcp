@@ -211,7 +211,7 @@ src/
 
 - TypeScript strict mode
 - No AI attribution in commits or code
-- SPDX license headers on all source files: `// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial`
+- SPDX license headers on all source files: `// SPDX-License-Identifier: AGPL-3.0-or-later`
 - Prefer explicit types over `any`
 - Keep functions focused — if it's doing two things, split it
 
@@ -230,7 +230,7 @@ If you're modifying `web-discovery.ts`, ensure security scan tests pass and cove
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the project's [AGPL-3.0-or-later](LICENSE) license, with the option for commercial licensing under the [Commercial License](LICENSE-COMMERCIAL.md).
+By contributing, you agree that your contributions will be licensed under the project's [AGPL-3.0-or-later](LICENSE) license.
 
 ## Questions?
 

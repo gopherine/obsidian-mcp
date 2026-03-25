@@ -144,13 +144,13 @@ describe("skill-cache", () => {
       const repoDir = join(tempDir, "vendor");
       await mkdir(repoDir, { recursive: true });
 
-      // Write 6 x 1 MB files with staggered access times
+      // Write 6 x 1 MB files with staggered mtime
       for (let i = 0; i < 6; i++) {
         const filePath = join(repoDir, `skill-${i}@1.0.0.md`);
         await writeFile(filePath, chunk, "utf-8");
-        // Set access time so skill-0 is oldest
-        const atime = new Date(Date.now() - (6 - i) * 60_000);
-        await utimes(filePath, atime, atime);
+        // Set mtime so skill-0 is oldest
+        const mtime = new Date(Date.now() - (6 - i) * 60_000);
+        await utimes(filePath, mtime, mtime);
       }
 
       const evicted = await evictLRU();
@@ -175,8 +175,8 @@ describe("skill-cache", () => {
       for (let i = 0; i < 5; i++) {
         const filePath = join(repoDir, `filler-${i}@1.0.0.md`);
         await writeFile(filePath, chunk, "utf-8");
-        const atime = new Date(Date.now() - (5 - i) * 60_000);
-        await utimes(filePath, atime, atime);
+        const mtime = new Date(Date.now() - (5 - i) * 60_000);
+        await utimes(filePath, mtime, mtime);
       }
 
       await evictLRU();

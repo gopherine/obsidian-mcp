@@ -56,16 +56,20 @@ export async function getCachedSkill(skillId: string, version?: string): Promise
  * Triggers LRU eviction when total cache size exceeds MAX_CACHE_SIZE_BYTES.
  */
 export async function cacheSkill(skillId: string, content: string, version?: string): Promise<void> {
+  let tmp: string | undefined;
   try {
     const path = skillCachePath(skillId, version);
     await mkdir(dirname(path), { recursive: true });
-    const tmp = join(tmpdir(), `superskill-cache-${randomBytes(8).toString("hex")}`);
+    tmp = join(tmpdir(), `superskill-cache-${randomBytes(8).toString("hex")}`);
     await writeFile(tmp, content, "utf-8");
     await rename(tmp, path);
+    tmp = undefined; // rename succeeded — no cleanup needed
     // Evict stale entries if cache has grown too large
     await evictLRU();
-  } catch {
-    // Cache write failure is non-fatal
+  } catch (e) {
+    console.error(`[cache] write failed for ${skillId}: ${(e as Error).message}`);
+    // Clean up orphaned temp file
+    if (tmp) { try { await unlink(tmp); } catch { /* best effort */ } }
   }
 }
 
@@ -161,13 +165,13 @@ export async function listCachedSkills(): Promise<string[]> {
 // ── Eviction & Invalidation ─────────────────────────
 
 /**
- * Evict least-recently-accessed cached files until total size is under
+ * Evict oldest cached files (by mtime) until total size is under
  * MAX_CACHE_SIZE_BYTES. Core prefetch skills are exempt from eviction.
  * Returns the number of evicted entries.
  */
 export async function evictLRU(): Promise<number> {
   // Collect all cached files with stats
-  interface CacheEntry { path: string; skillId: string; size: number; atimeMs: number }
+  interface CacheEntry { path: string; skillId: string; size: number; mtimeMs: number }
   const entries: CacheEntry[] = [];
 
   const repos = await readdir(cacheDir).catch(() => [] as string[]);
@@ -181,7 +185,7 @@ export async function evictLRU(): Promise<number> {
         const st = await stat(filePath);
         // Derive skillId (strip version tag and .md for comparison)
         const base = file.replace(".md", "").replace(/@[^@]+$/, "");
-        entries.push({ path: filePath, skillId: `${repo}/${base}`, size: st.size, atimeMs: st.atimeMs });
+        entries.push({ path: filePath, skillId: `${repo}/${base}`, size: st.size, mtimeMs: st.mtimeMs });
       } catch {
         // stat failed — skip
       }
@@ -191,8 +195,8 @@ export async function evictLRU(): Promise<number> {
   const totalSize = entries.reduce((sum, e) => sum + e.size, 0);
   if (totalSize <= MAX_CACHE_SIZE_BYTES) return 0;
 
-  // Sort oldest-accessed first
-  entries.sort((a, b) => a.atimeMs - b.atimeMs);
+  // Sort oldest-modified first (mtime is reliable across all platforms, unlike atime)
+  entries.sort((a, b) => a.mtimeMs - b.mtimeMs);
 
   const coreSet = new Set(PREFETCH_SKILL_IDS);
   let currentSize = totalSize;

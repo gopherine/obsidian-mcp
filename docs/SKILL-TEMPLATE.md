@@ -5,6 +5,10 @@ version: 1.0.0
 tags:
   - keyword1
   - keyword2
+triggers:
+  - action-verb
+  - tool-name
+  - synonym
 ---
 
 # My Skill Name

@@ -3,8 +3,8 @@
 import { detectTool } from "./tool-detector.js";
 import { estimateTokens } from "./token-estimator.js";
 
-/** Max % of context window to allocate to skills */
-const SKILL_BUDGET_RATIO = 0.15; // 15% of context window
+/** Max fraction of context window to allocate to skills (15%) */
+const SKILL_BUDGET_RATIO = 0.15;
 const MIN_BUDGET_TOKENS = 2_000;
 const MAX_BUDGET_TOKENS = 50_000;
 
@@ -40,7 +40,11 @@ export function fitSkillsToBudget(
       included.push(i);
       usedTokens += tokens;
     } else {
-      excluded.push(i);
+      // Once budget is exceeded, all remaining skills are excluded (priority order)
+      for (let j = i; j < contents.length; j++) {
+        excluded.push(j);
+      }
+      break;
     }
   }
 

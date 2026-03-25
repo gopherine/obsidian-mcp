@@ -51,8 +51,13 @@ export async function onboard(options?: {
   }
 
   // 4. Scan installed skills
-  const scan = await scanInstalledSkills();
-  const installedSkills = scan.skills.length;
+  let installedSkills = 0;
+  try {
+    const scan = await scanInstalledSkills();
+    installedSkills = scan.skills.length;
+  } catch (e) {
+    errors.push(`skill scan: ${(e as Error).message}`);
+  }
 
   return {
     vaultPath,
